@@ -1,0 +1,383 @@
+/* ------------------------------------------------------------------ */
+/* CLICOPRE — design tokens                                            */
+/* Editorial scholarly modernism: Fraunces display, IBM Plex Sans body,*/
+/* IBM Plex Mono metadata. Climate-teal accent on warm paper.          */
+/* ------------------------------------------------------------------ */
+
+:root {
+  /* palette */
+  --c-bg: #f4f1e8;          /* warm paper */
+  --c-bg-alt: #ebe7da;      /* subtle panel */
+  --c-bg-deep: #e3dfd0;     /* deeper warm */
+  --c-ink: #0e1d28;         /* near-black slate */
+  --c-ink-soft: #344552;    /* secondary text */
+  --c-ink-muted: #6b7985;   /* tertiary text */
+  --c-line: #d6d1c0;        /* hairline rules */
+  --c-line-strong: #b9b3a0;
+
+  --c-teal: #0fb8a3;        /* primary accent — climate teal */
+  --c-teal-deep: #0a8a7a;   /* accent hover / dark accent */
+  --c-teal-soft: #c8ebe5;   /* tinted backgrounds */
+  --c-amber: #c9722b;       /* secondary accent (sparing, copper) */
+
+  /* warming-stripes palette (cool → warm) — used as climate signature */
+  --ws-1: #2c5d8a;
+  --ws-2: #5a8db5;
+  --ws-3: #9ebbd1;
+  --ws-4: #d9d3c4;
+  --ws-5: #e8b88a;
+  --ws-6: #d97a4a;
+  --ws-7: #b8401f;
+
+  /* typography */
+  --f-display: "Fraunces", "Source Serif 4", Georgia, "Times New Roman", serif;
+  --f-sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  /* fluid scale */
+  --step--2: clamp(0.72rem, 0.70rem + 0.10vw, 0.78rem);
+  --step--1: clamp(0.83rem, 0.80rem + 0.13vw, 0.91rem);
+  --step-0:  clamp(1.00rem, 0.95rem + 0.25vw, 1.13rem);
+  --step-1:  clamp(1.20rem, 1.12rem + 0.40vw, 1.41rem);
+  --step-2:  clamp(1.44rem, 1.30rem + 0.70vw, 1.76rem);
+  --step-3:  clamp(1.73rem, 1.50rem + 1.10vw, 2.20rem);
+  --step-4:  clamp(2.07rem, 1.72rem + 1.75vw, 2.75rem);
+  --step-5:  clamp(2.49rem, 1.95rem + 2.70vw, 3.44rem);
+  --step-6:  clamp(2.99rem, 2.19rem + 4.00vw, 4.30rem);
+  --step-7:  clamp(3.50rem, 2.30rem + 6.00vw, 5.60rem);
+
+  /* layout */
+  --max-w: 1240px;
+  --max-w-prose: 68ch;
+  --gutter: clamp(1.25rem, 4vw, 2.75rem);
+  --radius: 2px;
+  --radius-sm: 1px;
+
+  /* motion */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur: 0.6s;
+}
+
+/* ------------------------------------------------------------------ */
+/* Reset                                                               */
+/* ------------------------------------------------------------------ */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  font-feature-settings: "kern", "liga", "calt", "ss01", "ss02";
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  margin: 0;
+  font-family: var(--f-sans);
+  font-size: var(--step-0);
+  font-weight: 400;
+  line-height: 1.62;
+  color: var(--c-ink-soft);
+  background: var(--c-bg);
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: oldstyle-nums proportional-nums;
+}
+
+/* paper grain — barely visible warm noise to kill flat-screen feel */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.035;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='matrix' values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.55 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+img, svg { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; transition: color 0.25s ease; }
+a:hover { color: var(--c-teal-deep); }
+
+::selection { background: var(--c-teal); color: var(--c-bg); }
+
+/* ------------------------------------------------------------------ */
+/* Type                                                                */
+/* ------------------------------------------------------------------ */
+h1, h2, h3, h4 {
+  font-family: var(--f-display);
+  font-weight: 400;
+  font-variation-settings: "opsz" 144, "SOFT" 30, "WONK" 1;
+  font-style: normal;
+  line-height: 1.04;
+  letter-spacing: -0.022em;
+  margin: 0 0 0.5em;
+  color: var(--c-ink);
+  text-wrap: balance;
+}
+h1 {
+  font-size: var(--step-7);
+  font-variation-settings: "opsz" 144, "SOFT" 50, "WONK" 1;
+  letter-spacing: -0.035em;
+  font-weight: 380;
+}
+h2 {
+  font-size: var(--step-5);
+  font-variation-settings: "opsz" 96, "SOFT" 40, "WONK" 1;
+  letter-spacing: -0.025em;
+  font-weight: 400;
+}
+h3 {
+  font-size: var(--step-2);
+  font-variation-settings: "opsz" 36, "SOFT" 30, "WONK" 0;
+  letter-spacing: -0.015em;
+  font-weight: 500;
+  line-height: 1.15;
+}
+h4 {
+  font-size: var(--step-1);
+  font-variation-settings: "opsz" 24, "SOFT" 20, "WONK" 0;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+p {
+  margin: 0 0 1em;
+  color: var(--c-ink-soft);
+  text-wrap: pretty;
+}
+
+em, i {
+  font-style: italic;
+  font-variation-settings: "opsz" 144, "SOFT" 100, "WONK" 1;
+}
+
+/* ------------------------------------------------------------------ */
+/* Editorial primitives                                                */
+/* ------------------------------------------------------------------ */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--f-mono);
+  font-size: var(--step--2);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-ink-muted);
+  margin: 0 0 1.4rem;
+}
+.eyebrow::before {
+  content: "";
+  width: 1.6rem;
+  height: 1px;
+  background: var(--c-ink-muted);
+}
+
+.section-marker {
+  font-family: var(--f-mono);
+  font-size: var(--step--2);
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: var(--c-teal-deep);
+  text-transform: uppercase;
+}
+
+.meta-line {
+  font-family: var(--f-mono);
+  font-size: var(--step--2);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: var(--c-ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.tabular { font-variant-numeric: tabular-nums lining-nums; }
+
+/* ------------------------------------------------------------------ */
+/* Layout primitives                                                   */
+/* ------------------------------------------------------------------ */
+.container {
+  width: 100%;
+  max-width: var(--max-w);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+  position: relative;
+}
+
+section {
+  padding-block: clamp(4.5rem, 10vw, 8rem);
+  position: relative;
+}
+section.tight { padding-block: clamp(3rem, 6vw, 5rem); }
+section.alt { background: var(--c-bg-alt); }
+section.deep { background: var(--c-bg-deep); }
+
+.rule {
+  height: 1px;
+  background: var(--c-line);
+  border: none;
+  margin: 0;
+}
+
+.section-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.6rem;
+  margin-bottom: clamp(2.5rem, 5vw, 4rem);
+  max-width: 64ch;
+}
+.section-head h2 { margin: 0; }
+
+/* section number rail — drops a small "§ I" marker above each section's H2 */
+.section-rail {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-bottom: 1rem;
+}
+.section-rail::before {
+  content: "";
+  width: 2rem;
+  height: 1px;
+  background: var(--c-teal-deep);
+}
+
+/* ------------------------------------------------------------------ */
+/* Warming stripes — climate signature                                 */
+/* a single horizontal strip of vertical bars, cool → warm.            */
+/* Inspired by Ed Hawkins' #ShowYourStripes.                           */
+/* ------------------------------------------------------------------ */
+.warming-stripes {
+  display: flex;
+  width: 100%;
+  height: 6px;
+  gap: 0;
+}
+.warming-stripes > i {
+  flex: 1;
+  display: block;
+  height: 100%;
+}
+.warming-stripes > i:nth-child(1) { background: var(--ws-1); }
+.warming-stripes > i:nth-child(2) { background: var(--ws-2); }
+.warming-stripes > i:nth-child(3) { background: var(--ws-2); }
+.warming-stripes > i:nth-child(4) { background: var(--ws-3); }
+.warming-stripes > i:nth-child(5) { background: var(--ws-3); }
+.warming-stripes > i:nth-child(6) { background: var(--ws-4); }
+.warming-stripes > i:nth-child(7) { background: var(--ws-4); }
+.warming-stripes > i:nth-child(8) { background: var(--ws-3); }
+.warming-stripes > i:nth-child(9) { background: var(--ws-4); }
+.warming-stripes > i:nth-child(10) { background: var(--ws-5); }
+.warming-stripes > i:nth-child(11) { background: var(--ws-4); }
+.warming-stripes > i:nth-child(12) { background: var(--ws-5); }
+.warming-stripes > i:nth-child(13) { background: var(--ws-5); }
+.warming-stripes > i:nth-child(14) { background: var(--ws-6); }
+.warming-stripes > i:nth-child(15) { background: var(--ws-5); }
+.warming-stripes > i:nth-child(16) { background: var(--ws-6); }
+.warming-stripes > i:nth-child(17) { background: var(--ws-6); }
+.warming-stripes > i:nth-child(18) { background: var(--ws-7); }
+.warming-stripes > i:nth-child(19) { background: var(--ws-6); }
+.warming-stripes > i:nth-child(20) { background: var(--ws-7); }
+
+.warming-stripes--tall { height: 14px; }
+.warming-stripes--mark { width: 56px; height: 10px; }
+
+/* on-load reveal — stripes appear left-to-right */
+.warming-stripes > i {
+  transform: scaleY(0);
+  transform-origin: bottom;
+  animation: stripeIn 0.9s var(--ease-out) forwards;
+}
+.warming-stripes > i:nth-child(1)  { animation-delay: 0.05s; }
+.warming-stripes > i:nth-child(2)  { animation-delay: 0.08s; }
+.warming-stripes > i:nth-child(3)  { animation-delay: 0.11s; }
+.warming-stripes > i:nth-child(4)  { animation-delay: 0.14s; }
+.warming-stripes > i:nth-child(5)  { animation-delay: 0.17s; }
+.warming-stripes > i:nth-child(6)  { animation-delay: 0.20s; }
+.warming-stripes > i:nth-child(7)  { animation-delay: 0.23s; }
+.warming-stripes > i:nth-child(8)  { animation-delay: 0.26s; }
+.warming-stripes > i:nth-child(9)  { animation-delay: 0.29s; }
+.warming-stripes > i:nth-child(10) { animation-delay: 0.32s; }
+.warming-stripes > i:nth-child(11) { animation-delay: 0.35s; }
+.warming-stripes > i:nth-child(12) { animation-delay: 0.38s; }
+.warming-stripes > i:nth-child(13) { animation-delay: 0.41s; }
+.warming-stripes > i:nth-child(14) { animation-delay: 0.44s; }
+.warming-stripes > i:nth-child(15) { animation-delay: 0.47s; }
+.warming-stripes > i:nth-child(16) { animation-delay: 0.50s; }
+.warming-stripes > i:nth-child(17) { animation-delay: 0.53s; }
+.warming-stripes > i:nth-child(18) { animation-delay: 0.56s; }
+.warming-stripes > i:nth-child(19) { animation-delay: 0.59s; }
+.warming-stripes > i:nth-child(20) { animation-delay: 0.62s; }
+
+@keyframes stripeIn {
+  to { transform: scaleY(1); }
+}
+
+/* ------------------------------------------------------------------ */
+/* Buttons                                                             */
+/* ------------------------------------------------------------------ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.95rem 1.4rem;
+  font-family: var(--f-sans);
+  font-weight: 500;
+  font-size: var(--step--1);
+  letter-spacing: 0.01em;
+  border-radius: 0;
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.3s ease, color 0.3s ease,
+              border-color 0.3s ease, transform 0.5s var(--ease);
+}
+.btn .arrow {
+  display: inline-block;
+  transition: transform 0.5s var(--ease);
+}
+.btn:hover .arrow { transform: translateX(4px); }
+
+.btn-primary {
+  background: var(--c-ink);
+  color: var(--c-bg);
+  border-color: var(--c-ink);
+}
+.btn-primary:hover { background: var(--c-teal-deep); border-color: var(--c-teal-deep); color: var(--c-bg); }
+
+.btn-ghost {
+  background: transparent;
+  border-color: var(--c-line-strong);
+  color: var(--c-ink);
+}
+.btn-ghost:hover { background: var(--c-ink); border-color: var(--c-ink); color: var(--c-bg); }
+
+/* ------------------------------------------------------------------ */
+/* Scroll-reveal                                                       */
+/* ------------------------------------------------------------------ */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 1s var(--ease), transform 1s var(--ease);
+  will-change: opacity, transform;
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+.reveal[data-delay="1"] { transition-delay: 0.08s; }
+.reveal[data-delay="2"] { transition-delay: 0.16s; }
+.reveal[data-delay="3"] { transition-delay: 0.24s; }
+.reveal[data-delay="4"] { transition-delay: 0.32s; }
+.reveal[data-delay="5"] { transition-delay: 0.40s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+  html { scroll-behavior: auto; }
+  .warming-stripes > i { animation: none; transform: none; }
+}

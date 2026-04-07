@@ -1,0 +1,419 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const pillars = [
+  {
+    n: '01',
+    title: 'Weather shocks',
+    body: 'Identifying extreme weather events with high spatial and temporal resolution and using them as exogenous shocks to the climate debate.',
+    keys: ['ERA5 reanalysis', 'Heatwaves', 'Floods', 'Drought indices'],
+  },
+  {
+    n: '02',
+    title: 'Political communication',
+    body: 'Measuring how politicians and news outlets in the EU and the US talk about climate on social media — what they say, when, and to whom.',
+    keys: ['Politician corpora', 'News outlets', 'Computational text', 'Topic models'],
+  },
+  {
+    n: '03',
+    title: 'Policy & voting',
+    body: 'Tracing whether weather-driven shifts in attention move legislative activity, roll-call votes, and accountability around climate policy.',
+    keys: ['Roll-calls', 'Bills introduced', 'Accountability', 'Causal designs'],
+  },
+];
+
+const approach = [
+  {
+    label: 'Data',
+    text: 'Large-scale social media corpora, parliamentary records, and high-resolution climate reanalyses, joined at the politician–day level.',
+  },
+  {
+    label: 'Methods',
+    text: 'Computational text analysis and modern NLP, combined with causal inference designs that exploit the as-good-as-random timing of weather shocks.',
+  },
+  {
+    label: 'Outputs',
+    text: 'Open data, replication code, working papers, and — at a later stage — interactive evidence dashboards.',
+  },
+];
+---
+
+<Layout>
+  <!-- ───────────────── HERO ───────────────── -->
+  <section class="hero">
+    <div class="container hero__inner">
+      <aside class="hero__meta">
+        <p class="meta-line">§&nbsp;A research project</p>
+        <p class="meta-line">2024 — present</p>
+        <p class="meta-line">Padua · Cambridge, MA</p>
+        <p class="meta-line">MSCA Seal of Excellence</p>
+      </aside>
+
+      <div class="hero__main">
+        <p class="eyebrow reveal">Climate shocks · Political response</p>
+
+        <h1 class="hero__title reveal" data-delay="1">
+          How <em>climate shocks</em> shape political communication and the policy response.
+        </h1>
+
+        <p class="hero__lede reveal" data-delay="2">
+          Clicopre studies how extreme weather events move the climate debate
+          among politicians and news outlets on social media — and whether
+          these shocks translate into legislative action and voting behaviour
+          in the European Union and the United States.
+        </p>
+
+        <div class="hero__cta reveal" data-delay="3">
+          <a class="btn btn-primary" href="#research">
+            Read the research agenda <span class="arrow">→</span>
+          </a>
+          <a class="btn btn-ghost" href="#approach">
+            How we work
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- climate signature: warming stripes anchor the hero -->
+    <div class="hero__signature reveal" data-delay="4">
+      <div class="container hero__signature-inner">
+        <div class="warming-stripes warming-stripes--tall" aria-hidden="true">
+          {Array.from({ length: 20 }).map(() => <i></i>)}
+        </div>
+        <p class="meta-line hero__signature-caption">
+          ↳ Annual mean temperature anomaly · 1900 ··· 2024 · after E. Hawkins
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────── §I RESEARCH PILLARS ───────────────── -->
+  <section id="research">
+    <div class="container">
+      <header class="section-head reveal">
+        <div class="section-rail">
+          <span class="section-marker">§ I — Research agenda</span>
+        </div>
+        <h2>Three intertwined questions about climate, attention, and accountability.</h2>
+      </header>
+
+      <div class="pillars">
+        {pillars.map((p, i) => (
+          <article class="pillar reveal" data-delay={String(i + 1)}>
+            <header class="pillar__head">
+              <span class="pillar__n tabular">— {p.n}</span>
+              <h3 class="pillar__title">{p.title}</h3>
+            </header>
+            <p class="pillar__body">{p.body}</p>
+            <ul class="pillar__keys">
+              {p.keys.map((k) => <li>{k}</li>)}
+            </ul>
+            <span class="pillar__arrow" aria-hidden="true">→</span>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────── §II APPROACH ───────────────── -->
+  <section id="approach" class="alt">
+    <div class="container">
+      <header class="section-head reveal">
+        <div class="section-rail">
+          <span class="section-marker">§ II — How we work</span>
+        </div>
+        <h2>Computational methods, large-scale data, causal inference.</h2>
+      </header>
+
+      <ul class="approach__list">
+        {approach.map((a, i) => (
+          <li class="approach__item reveal" data-delay={String(i + 1)}>
+            <span class="approach__label">{a.label}</span>
+            <p>{a.text}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <!-- ───────────────── §III PEOPLE ───────────────── -->
+  <section id="people">
+    <div class="container two-col">
+      <header class="section-head reveal">
+        <div class="section-rail">
+          <span class="section-marker">§ III — People &amp; institutions</span>
+        </div>
+        <h2>A small project carried out across two universities.</h2>
+      </header>
+      <div class="reveal" data-delay="1">
+        <p>
+          Clicopre is led by <strong>Duccio Gamannossi degl’Innocenti</strong>,
+          based at the <strong>University of Padua</strong> and visiting
+          <strong>Harvard University</strong>.
+        </p>
+        <p>
+          The project is carried out under the <strong>MSCA Seal of
+          Excellence</strong> framework at the University of Padua, with the
+          contribution of the <strong>Fondazione Cassa di Risparmio di Padova
+          e Rovigo</strong>.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────── §IV OUTPUTS ───────────────── -->
+  <section id="outputs" class="alt">
+    <div class="container">
+      <header class="section-head reveal">
+        <div class="section-rail">
+          <span class="section-marker">§ IV — Outputs</span>
+        </div>
+        <h2>Papers, data, code, and — soon — evidence dashboards.</h2>
+      </header>
+      <p class="muted reveal" data-delay="1">
+        Working papers and replication materials will appear here as the
+        project progresses. Dashboards summarising the evidence on
+        weather-driven climate communication will be released at a later
+        stage.
+      </p>
+    </div>
+  </section>
+
+  <!-- ───────────────── §V UPDATES ───────────────── -->
+  <section id="updates">
+    <div class="container">
+      <header class="section-head reveal">
+        <div class="section-rail">
+          <span class="section-marker">§ V — Updates</span>
+        </div>
+        <h2>Notes from the project.</h2>
+      </header>
+      <p class="muted reveal" data-delay="1">
+        No posts yet. The first updates from Clicopre will appear here.
+      </p>
+    </div>
+  </section>
+
+  <!-- ───────────────── §VI CONTACT ───────────────── -->
+  <section id="contact" class="alt tight">
+    <div class="container contact">
+      <header class="section-head reveal">
+        <div class="section-rail">
+          <span class="section-marker">§ VI — Contact</span>
+        </div>
+        <h2>Get in touch.</h2>
+      </header>
+      <p class="reveal" data-delay="1">
+        For research enquiries, collaboration proposals, or media requests,
+        please contact the principal investigator at the Department of
+        Economics and Management, University of Padua.
+      </p>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  /* ─────────────────────── HERO ─────────────────────── */
+  .hero {
+    position: relative;
+    padding-top: clamp(5rem, 11vw, 9.5rem);
+    padding-bottom: 0;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .hero__inner {
+    display: grid;
+    grid-template-columns: 12rem minmax(0, 1fr);
+    gap: clamp(1.5rem, 4vw, 4rem);
+    padding-bottom: clamp(4rem, 8vw, 6.5rem);
+  }
+  @media (max-width: 880px) {
+    .hero__inner { grid-template-columns: 1fr; gap: 2rem; }
+  }
+
+  .hero__meta {
+    display: grid;
+    align-content: start;
+    gap: 0.55rem;
+    padding-top: 0.7rem;
+    border-top: 1px solid var(--c-line);
+  }
+  .hero__meta .meta-line { margin: 0; }
+
+  .hero__main {
+    position: relative;
+  }
+  .hero__title {
+    font-size: clamp(2.6rem, 6.2vw, 5.2rem);
+    line-height: 1.02;
+    letter-spacing: -0.035em;
+    margin: 0.4rem 0 1.6rem;
+    max-width: 18ch;
+    text-wrap: balance;
+  }
+  .hero__title em {
+    font-style: italic;
+    color: var(--c-teal-deep);
+    font-variation-settings: "opsz" 144, "SOFT" 100, "WONK" 1;
+  }
+  .hero__lede {
+    font-size: var(--step-1);
+    color: var(--c-ink-soft);
+    max-width: 58ch;
+    margin: 0 0 2.2rem;
+    line-height: 1.55;
+  }
+  .hero__cta {
+    display: flex;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+  }
+
+  .hero__signature {
+    margin-top: 0;
+    border-top: 1px solid var(--c-line);
+    padding-block: 1.4rem 1.6rem;
+    background: color-mix(in srgb, var(--c-bg-alt) 70%, transparent);
+  }
+  .hero__signature-inner {
+    display: grid;
+    gap: 0.7rem;
+  }
+  .hero__signature-caption {
+    margin: 0;
+    color: var(--c-ink-muted);
+  }
+
+  /* ─────────────────────── PILLARS ─────────────────────── */
+  .pillars {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    border-top: 1px solid var(--c-line);
+  }
+  @media (max-width: 880px) {
+    .pillars { grid-template-columns: 1fr; }
+  }
+  .pillar {
+    position: relative;
+    padding: 2rem 1.8rem 2.4rem 0;
+    border-right: 1px solid var(--c-line);
+    transition: background-color 0.4s ease;
+  }
+  .pillar:last-child { border-right: none; }
+  @media (max-width: 880px) {
+    .pillar {
+      border-right: none;
+      border-bottom: 1px solid var(--c-line);
+      padding: 1.8rem 0 2rem;
+    }
+    .pillar:last-child { border-bottom: none; }
+  }
+  .pillar__head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.9rem;
+    margin-bottom: 0.7rem;
+  }
+  .pillar__n {
+    font-family: var(--f-mono);
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--c-teal-deep);
+    letter-spacing: 0.04em;
+  }
+  .pillar__title {
+    margin: 0;
+    font-size: var(--step-2);
+  }
+  .pillar__body {
+    margin: 0 0 1.3rem;
+    color: var(--c-ink-soft);
+    max-width: 32ch;
+  }
+  .pillar__keys {
+    list-style: none;
+    margin: 0;
+    padding: 1rem 0 0;
+    border-top: 1px dashed var(--c-line);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 0.9rem;
+  }
+  .pillar__keys li {
+    font-family: var(--f-mono);
+    font-size: 0.7rem;
+    color: var(--c-ink-muted);
+    letter-spacing: 0.02em;
+  }
+  .pillar__keys li::before {
+    content: "· ";
+    color: var(--c-teal);
+    margin-right: 0.15rem;
+  }
+  .pillar__arrow {
+    position: absolute;
+    bottom: 1.4rem;
+    right: 1.4rem;
+    font-family: var(--f-mono);
+    font-size: 0.95rem;
+    color: var(--c-ink-muted);
+    opacity: 0;
+    transform: translateX(-6px);
+    transition: opacity 0.45s var(--ease), transform 0.45s var(--ease),
+                color 0.4s ease;
+  }
+  .pillar:hover {
+    background: color-mix(in srgb, var(--c-teal) 5%, transparent);
+  }
+  .pillar:hover .pillar__arrow {
+    opacity: 1;
+    transform: translateX(0);
+    color: var(--c-teal-deep);
+  }
+
+  /* ─────────────────────── APPROACH ─────────────────────── */
+  .approach__list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: clamp(1.5rem, 3vw, 3rem);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  @media (max-width: 880px) {
+    .approach__list { grid-template-columns: 1fr; }
+  }
+  .approach__item {
+    border-top: 1px solid var(--c-line-strong);
+    padding-top: 1.4rem;
+  }
+  .approach__label {
+    display: block;
+    font-family: var(--f-mono);
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--c-teal-deep);
+    margin-bottom: 0.7rem;
+  }
+  .approach__item p { margin: 0; color: var(--c-ink-soft); }
+
+  /* ─────────────────────── TWO-COLUMN ─────────────────────── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: clamp(2rem, 5vw, 4.5rem);
+    align-items: start;
+  }
+  @media (max-width: 880px) {
+    .two-col { grid-template-columns: 1fr; }
+  }
+  .two-col .section-head { margin-bottom: 0; }
+  .two-col strong { color: var(--c-ink); font-weight: 500; }
+
+  /* ─────────────────────── MISC ─────────────────────── */
+  .muted { color: var(--c-ink-muted); max-width: 64ch; }
+  .contact .section-head { margin-bottom: 1.2rem; }
+</style>

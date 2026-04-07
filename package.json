@@ -1,0 +1,20 @@
+{
+  "name": "clicopre-site",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "shoot": "node scripts/screenshot.mjs"
+  },
+  "dependencies": {
+    "astro": "^4.16.0"
+  },
+  "devDependencies": {
+    "puppeteer": "^24.40.0"
+  }
+}

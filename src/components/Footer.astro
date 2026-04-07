@@ -1,0 +1,154 @@
+---
+const institutions = [
+  'Università degli Studi di Padova',
+  'Harvard University',
+  'MSCA Seal of Excellence',
+  'Fondazione Cassa di Risparmio di Padova e Rovigo',
+];
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="warming-stripes site-footer__stripes" aria-hidden="true">
+    {Array.from({ length: 20 }).map(() => <i></i>)}
+  </div>
+
+  <div class="container">
+    <div class="site-footer__grid">
+      <div class="site-footer__brand">
+        <a class="brand" href="/" aria-label="CLICOPRE — home">
+          <span class="brand__word">Clicopre</span>
+          <span class="brand__sub">A research project</span>
+        </a>
+        <p class="site-footer__tag">
+          Climate shocks, political communication, and the policy response
+          in the European Union and the United States.
+        </p>
+      </div>
+
+      <div>
+        <h4>Hosted &amp; supported by</h4>
+        <ul class="site-footer__list">
+          {institutions.map((i) => <li>{i}</li>)}
+        </ul>
+      </div>
+
+      <div>
+        <h4>Project</h4>
+        <ul class="site-footer__list">
+          <li><a href="#research">Research agenda</a></li>
+          <li><a href="#approach">Approach</a></li>
+          <li><a href="#outputs">Outputs</a></li>
+          <li><a href="#updates">Updates</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <hr class="rule" />
+
+    <div class="site-footer__meta">
+      <p class="meta-line">© {year} Clicopre · Duccio Gamannossi degl’Innocenti</p>
+      <p class="meta-line">
+        MSCA Seal of Excellence · Università di Padova · with the contribution
+        of Fondazione Cassa di Risparmio di Padova e Rovigo
+      </p>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    background: var(--c-ink);
+    color: var(--c-bg);
+    padding-block: 0 2rem;
+    margin-top: 4rem;
+    position: relative;
+  }
+  .site-footer__stripes {
+    height: 5px;
+  }
+  .site-footer .container {
+    color: var(--c-bg);
+    padding-top: clamp(3.5rem, 7vw, 6rem);
+  }
+
+  .site-footer__grid {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr 1fr;
+    gap: clamp(2rem, 5vw, 4.5rem);
+    align-items: start;
+  }
+  @media (max-width: 760px) {
+    .site-footer__grid { grid-template-columns: 1fr; }
+  }
+
+  .site-footer h4 {
+    font-family: var(--f-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--c-teal-soft);
+    margin: 0 0 1.2rem;
+    font-weight: 500;
+  }
+  .site-footer__tag {
+    color: color-mix(in srgb, var(--c-bg) 72%, transparent);
+    max-width: 38ch;
+    margin-top: 1.2rem;
+    font-size: var(--step--1);
+    line-height: 1.55;
+  }
+  .site-footer__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.7rem;
+    color: color-mix(in srgb, var(--c-bg) 78%, transparent);
+    font-size: var(--step--1);
+  }
+  .site-footer__list a { color: inherit; }
+  .site-footer__list a:hover { color: var(--c-teal-soft); }
+
+  /* footer brand block */
+  .brand {
+    display: inline-flex;
+    flex-direction: column;
+    color: var(--c-bg);
+    line-height: 1;
+  }
+  .brand__word {
+    font-family: var(--f-display);
+    font-variation-settings: "opsz" 144, "SOFT" 60, "WONK" 1;
+    font-weight: 420;
+    font-size: 1.85rem;
+    letter-spacing: -0.025em;
+  }
+  .brand__sub {
+    font-family: var(--f-mono);
+    font-size: 0.62rem;
+    font-weight: 400;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--c-bg) 55%, transparent);
+    margin-top: 0.3rem;
+  }
+
+  .site-footer .rule {
+    background: color-mix(in srgb, var(--c-bg) 18%, transparent);
+    margin-block: 3rem 1.5rem;
+  }
+  .site-footer__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem 2rem;
+    justify-content: space-between;
+    color: color-mix(in srgb, var(--c-bg) 55%, transparent);
+  }
+  .site-footer__meta .meta-line {
+    margin: 0;
+    max-width: 56ch;
+    color: inherit;
+  }
+</style>
