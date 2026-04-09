@@ -1,0 +1,85 @@
+---
+// Renders all four signature strip variants in the DOM at once.
+// CSS shows only the variant matching the active [data-theme] on <html>.
+// This lets us swap themes live without re-mounting any markup.
+//
+// Variants:
+//   warming  → Ed-Hawkins climate stripes (default theme)
+//   teletype → wire-service mono drifting tape (Dispatch)
+//   waveform → speech / audio bars (Frequency)
+//   contour  → topographic isolines (Cartograph)
+
+interface Props {
+  size?: 'thin' | 'tall' | 'mark';
+  class?: string;
+}
+
+const { size = 'thin', class: extra = '' } = Astro.props;
+
+const sizeClass =
+  size === 'tall' ? 'sig-strip--tall'
+  : size === 'mark' ? 'sig-strip--mark'
+  : '';
+
+// 25 short tokens for the teletype tape — wire-service alphabet:
+// dashes, dots, faux-words. Repeat twice for seamless infinite scroll.
+const tape =
+  '· — ·· DG · 11:42 GMT — — REUTERS · ·· — · COPENHAGEN — · ·· DATA · 0414 ' +
+  '— — DISPATCH · ·· — · BRUSSELS · — — · WIRE — ·· · ANALYSIS · — · ·· · ';
+const teletypeText = (tape + tape).trim();
+
+// Cartograph contour paths — three offset wavy lines spanning the strip.
+// Hand-tuned cubic bezier control points for an unbusy isobaric look.
+const contourPaths = [
+  'M0 7 C 60 2, 120 12, 180 6 S 300 10, 360 5 S 480 11, 600 4 S 780 13, 900 6 S 1080 9, 1200 5',
+  'M0 4 C 80 9, 140 1, 220 8 S 340 13, 440 4 S 580 8, 700 11 S 860 3, 980 7 S 1120 12, 1200 6',
+  'M0 10 C 70 5, 150 13, 240 7 S 360 2, 480 9 S 620 5, 760 12 S 920 7, 1060 3 S 1180 11, 1200 8',
+];
+
+// Frequency waveform — bar heights as fractions of strip height.
+// Generated deterministically (sine + jitter) so bars feel speech-like
+// without being random-looking.
+const wfBarCount = 200;
+const waveformHeights = Array.from({ length: wfBarCount }, (_, i) => {
+  const slow = Math.sin(i * 0.13);
+  const fast = Math.sin(i * 0.71 + 1.3);
+  const jitter = Math.sin(i * 2.17 + 0.4);
+  const v = 0.55 + 0.32 * slow + 0.12 * fast + 0.08 * jitter;
+  return Math.max(0.15, Math.min(0.98, v));
+});
+const wfBarW = 4;
+const wfGap = 2;
+const wfH = 14;
+const wfTotalW = wfBarCount * (wfBarW + wfGap) - wfGap;
+---
+
+<div class={`sig-strip ${sizeClass} ${extra}`} aria-hidden="true">
+  {/* Variant 1: Warming stripes (default) */}
+  <div class="sig-strip__variant sig-strip__variant--warming warming-stripes">
+    {Array.from({ length: 20 }).map(() => <i></i>)}
+  </div>
+
+  {/* Variant 2: Dispatch teletype */}
+  <div class="sig-strip__variant sig-strip__variant--teletype">
+    <span>{teletypeText}</span>
+  </div>
+
+  {/* Variant 3: Frequency waveform */}
+  <div class="sig-strip__variant sig-strip__variant--waveform">
+    <svg viewBox={`0 0 ${wfTotalW} ${wfH}`} preserveAspectRatio="none">
+      {waveformHeights.map((h, i) => {
+        const barH = h * wfH;
+        const y = (wfH - barH) / 2;
+        const x = i * (wfBarW + wfGap);
+        return <rect x={x} y={y} width={wfBarW} height={barH} rx="0.5" />;
+      })}
+    </svg>
+  </div>
+
+  {/* Variant 4: Cartograph contour lines */}
+  <div class="sig-strip__variant sig-strip__variant--contour">
+    <svg viewBox="0 0 1200 14" preserveAspectRatio="none">
+      {contourPaths.map((d) => <path d={d} />)}
+    </svg>
+  </div>
+</div>

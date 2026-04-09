@@ -59,6 +59,92 @@
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --dur: 0.6s;
+
+  /* signature visual: which strip variant is active.
+     The default theme uses warming-stripes; alternative themes redefine
+     this and the SignatureStrip component shows a different SVG. */
+  --sig-1: var(--ws-1);
+  --sig-2: var(--ws-2);
+  --sig-3: var(--ws-3);
+  --sig-4: var(--ws-4);
+  --sig-5: var(--ws-5);
+  --sig-6: var(--ws-6);
+  --sig-7: var(--ws-7);
+}
+
+/* ------------------------------------------------------------------ */
+/* Theme A — Dispatch                                                  */
+/* Editorial wire-service / foreign-correspondent press.               */
+/* Parchment + walnut ink + muted clay accent.                         */
+/* ------------------------------------------------------------------ */
+:root[data-theme="dispatch"] {
+  --c-bg:        #ede6d6;
+  --c-bg-alt:    #e4ddca;
+  --c-bg-deep:   #dad2bb;
+  --c-ink:       #1c1612;
+  --c-ink-soft:  #3e342c;
+  --c-ink-muted: #6b5e4f;
+  --c-line:      #cdc3aa;
+  --c-line-strong: #ad9f80;
+
+  --c-teal:       #a85a3a;   /* clay-persimmon */
+  --c-teal-deep:  #823f23;
+  --c-teal-soft:  #e8d4c5;
+  --c-amber:      #6f8a7e;   /* aged celadon as secondary */
+
+  --f-display: "Newsreader", "Newsreader Fallback", Georgia, "Times New Roman", serif;
+  --f-sans:    "Literata", Georgia, "Times New Roman", serif;
+  --f-mono:    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Dispatch keeps a paler grain — wire-service offset print feel */
+}
+
+/* ------------------------------------------------------------------ */
+/* Theme B — Frequency                                                 */
+/* Broadcast / acoustic media. Bone, indigo, copper-rose.              */
+/* ------------------------------------------------------------------ */
+:root[data-theme="frequency"] {
+  --c-bg:        #efe9df;
+  --c-bg-alt:    #e6dfd1;
+  --c-bg-deep:   #ddd4c1;
+  --c-ink:       #1a1a2a;
+  --c-ink-soft:  #3a3a4d;
+  --c-ink-muted: #6a647a;
+  --c-line:      #d2cab8;
+  --c-line-strong: #b3a98f;
+
+  --c-teal:       #b76a5e;   /* copper-rose */
+  --c-teal-deep:  #8c4538;
+  --c-teal-soft:  #ecd6cf;
+  --c-amber:      #6a647a;   /* smoke-violet secondary */
+
+  --f-display: "Instrument Serif", Georgia, "Times New Roman", serif;
+  --f-sans:    "Manrope", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --f-mono:    "Space Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* ------------------------------------------------------------------ */
+/* Theme C — Cartograph                                                */
+/* Political geography / atlas. Pale stone, ink-green, terracotta.     */
+/* ------------------------------------------------------------------ */
+:root[data-theme="cartograph"] {
+  --c-bg:        #e8e3d2;
+  --c-bg-alt:    #ddd8c4;
+  --c-bg-deep:   #d2ccb5;
+  --c-ink:       #14201c;
+  --c-ink-soft:  #2f3d37;
+  --c-ink-muted: #5e6b62;
+  --c-line:      #c8c2a8;
+  --c-line-strong: #a59e80;
+
+  --c-teal:       #b8794a;   /* terracotta-ochre */
+  --c-teal-deep:  #8a5128;
+  --c-teal-soft:  #e6d2bb;
+  --c-amber:      #8a9a73;   /* lichen secondary */
+
+  --f-display: "Spectral", Georgia, "Times New Roman", serif;
+  --f-sans:    "DM Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --f-mono:    "DM Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 
 /* ------------------------------------------------------------------ */
@@ -74,6 +160,9 @@ html {
   font-feature-settings: "kern", "liga", "calt", "ss01", "ss02";
   text-rendering: optimizeLegibility;
 }
+
+/* keep anchored sections clear of the sticky header */
+section[id] { scroll-margin-top: 5.5rem; }
 
 body {
   margin: 0;
@@ -102,6 +191,18 @@ body::before {
 img, svg { display: block; max-width: 100%; }
 a { color: inherit; text-decoration: none; transition: color 0.25s ease; }
 a:hover { color: var(--c-teal-deep); }
+
+/* ── Inline link style ── */
+.link {
+  color: var(--c-ink);
+  border-bottom: 1.5px solid var(--c-teal);
+  padding-bottom: 1px;
+  transition: background 0.25s ease, color 0.25s ease;
+}
+.link:hover {
+  background: color-mix(in srgb, var(--c-teal-soft) 50%, transparent);
+  color: var(--c-teal-deep);
+}
 
 ::selection { background: var(--c-teal); color: var(--c-bg); }
 
@@ -380,4 +481,804 @@ section.deep { background: var(--c-bg-deep); }
   .reveal { opacity: 1; transform: none; transition: none; }
   html { scroll-behavior: auto; }
   .warming-stripes > i { animation: none; transform: none; }
+  .sig-strip * { animation: none !important; }
 }
+
+/* ------------------------------------------------------------------ */
+/* SignatureStrip — per-theme replacement for warming stripes          */
+/* The component renders all variants in the DOM; CSS shows only the   */
+/* one matching the active [data-theme]. This lets us swap themes      */
+/* without re-mounting any markup.                                     */
+/* ------------------------------------------------------------------ */
+.sig-strip {
+  display: block;
+  width: 100%;
+  height: 6px;
+  position: relative;
+  overflow: hidden;
+}
+.sig-strip__variant {
+  display: none;
+  width: 100%;
+  height: 100%;
+}
+:root:not([data-theme]) .sig-strip__variant--warming,
+:root[data-theme="default"] .sig-strip__variant--warming { display: flex; }
+:root[data-theme="dispatch"]   .sig-strip__variant--teletype { display: block; }
+:root[data-theme="frequency"]  .sig-strip__variant--waveform { display: block; }
+:root[data-theme="cartograph"] .sig-strip__variant--contour  { display: block; }
+
+/* Tall variant for hero / footer accents */
+.sig-strip--tall { height: 14px; }
+.sig-strip--mark { width: 56px; height: 10px; display: inline-block; }
+
+/* ── Dispatch: teletype tape ────────────────────────────────────── */
+/* A row of small mono glyphs that slowly drift left.                */
+.sig-strip__variant--teletype {
+  font-family: var(--f-mono, "JetBrains Mono", monospace);
+  font-size: 7px;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--c-teal-deep);
+  letter-spacing: 0.18em;
+  background:
+    linear-gradient(90deg, var(--c-bg) 0%, transparent 6%, transparent 94%, var(--c-bg) 100%),
+    repeating-linear-gradient(90deg, var(--c-line) 0 1px, transparent 1px 14px);
+  position: relative;
+}
+.sig-strip__variant--teletype span {
+  display: inline-block;
+  padding-top: 0px;
+  animation: teletypeDrift 22s linear infinite;
+}
+.sig-strip--tall .sig-strip__variant--teletype { font-size: 9px; padding-top: 2px; }
+@keyframes teletypeDrift {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* ── Frequency: speech waveform (SVG) ───────────────────────────── */
+/* Many thin vertical bars centered on the strip's midline, varying    */
+/* heights, with a slow center-pivot "breath". SVG so bars scale.      */
+.sig-strip__variant--waveform { display: none; }
+:root[data-theme="frequency"] .sig-strip__variant--waveform { display: block; }
+.sig-strip__variant--waveform svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.sig-strip__variant--waveform rect {
+  fill: var(--c-teal);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: waveformBreath 3.6s ease-in-out infinite;
+}
+.sig-strip__variant--waveform rect:nth-child(3n)   { fill: var(--c-ink); }
+.sig-strip__variant--waveform rect:nth-child(5n)   { fill: var(--c-amber); }
+@keyframes waveformBreath {
+  0%, 100% { transform: scaleY(0.85); opacity: 0.85; }
+  50%      { transform: scaleY(1.10); opacity: 1; }
+}
+
+/* ── Cartograph: contour-line strip ─────────────────────────────── */
+.sig-strip__variant--contour {
+  background:
+    repeating-linear-gradient(
+      to right,
+      transparent 0 79px,
+      color-mix(in srgb, var(--c-line-strong) 60%, transparent) 79px 80px
+    );
+  position: relative;
+}
+.sig-strip__variant--contour svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.sig-strip__variant--contour path {
+  fill: none;
+  stroke: var(--c-teal-deep);
+  stroke-width: 2.5;
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: round;
+  opacity: 1;
+  animation: contourDrift 18s ease-in-out infinite;
+}
+.sig-strip__variant--contour path:nth-child(2) {
+  stroke: var(--c-amber);
+  stroke-width: 2;
+  opacity: 0.9;
+  animation-delay: -6s;
+}
+.sig-strip__variant--contour path:nth-child(3) {
+  stroke: var(--c-ink);
+  stroke-width: 1.6;
+  opacity: 0.7;
+  animation-delay: -12s;
+}
+@keyframes contourDrift {
+  0%, 100% { transform: translateX(0); }
+  50%      { transform: translateX(-2%); }
+}
+
+/* ------------------------------------------------------------------ */
+/* Theme-specific micro-animations on .reveal                          */
+/* ------------------------------------------------------------------ */
+
+/* Dispatch: typewriter-print on eyebrows.
+   .eyebrow's ::before bar grows in like a print head ribbon. */
+:root[data-theme="dispatch"] .eyebrow::before {
+  width: 0;
+  transition: width 0.7s steps(20, end);
+}
+:root[data-theme="dispatch"] .reveal.is-visible .eyebrow::before,
+:root[data-theme="dispatch"] .is-visible.eyebrow::before {
+  width: 1.6rem;
+}
+
+/* Frequency: section-rail hairline pulses softly */
+:root[data-theme="frequency"] .section-rail::before {
+  background: linear-gradient(90deg, var(--c-teal-deep), var(--c-amber));
+  animation: freqRailPulse 4s ease-in-out infinite;
+}
+@keyframes freqRailPulse {
+  0%, 100% { opacity: 0.6; transform: scaleX(1); }
+  50%      { opacity: 1;   transform: scaleX(1.15); }
+}
+
+/* Cartograph: section-rail draws on with a graticule end-tick */
+:root[data-theme="cartograph"] .section-rail::before {
+  background: var(--c-teal-deep);
+  position: relative;
+}
+:root[data-theme="cartograph"] .section-rail {
+  position: relative;
+}
+:root[data-theme="cartograph"] .section-rail::after {
+  content: "";
+  width: 1px;
+  height: 7px;
+  background: var(--c-teal-deep);
+  margin-left: -0.9rem;
+  align-self: center;
+  margin-right: 0.3rem;
+}
+
+/* Cartograph paper feels denser */
+:root[data-theme="cartograph"] body::before { opacity: 0.05; }
+/* Frequency feels cleaner */
+:root[data-theme="frequency"] body::before  { opacity: 0.025; }
+/* Dispatch is grainier */
+:root[data-theme="dispatch"] body::before   { opacity: 0.06; }
+
+/* ------------------------------------------------------------------ */
+/* Section divider — compact inter-section interlude                  */
+/* Slim band with a small data-vis + quiet caption underneath          */
+/* ------------------------------------------------------------------ */
+.section-divider {
+  display: block;
+  padding-block: clamp(1.1rem, 2.4vw, 1.6rem);
+  background: var(--c-bg);
+  border-block: 1px solid var(--c-line);
+  position: relative;
+  overflow: hidden;
+}
+.section-divider__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.55rem;
+}
+.section-divider__caption {
+  margin: 0;
+  font-family: var(--f-mono);
+  font-size: var(--step--2);
+  color: var(--c-ink-muted);
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.section-divider__viz {
+  width: 100%;
+  position: relative;
+}
+
+/* Keep motion-heavy dividers at the same visual width. */
+.section-divider--newsfeed .section-divider__inner,
+.section-divider--network .section-divider__inner,
+.section-divider--rollcall .section-divider__inner,
+.section-divider--contour .section-divider__inner {
+  max-width: 1120px;
+  margin-inline: auto;
+}
+
+/* ── Heatwave divider ───────────────────────────────────────────── */
+.sd-heatwave__strip {
+  width: 100%;
+  height: 22px;
+}
+.sd-heatwave__strip > i:nth-child(n)        { background: var(--ws-1); }
+.sd-heatwave__strip > i:nth-child(n+3)      { background: var(--ws-2); }
+.sd-heatwave__strip > i:nth-child(n+7)      { background: var(--ws-3); }
+.sd-heatwave__strip > i:nth-child(n+12)     { background: var(--ws-4); }
+.sd-heatwave__strip > i:nth-child(n+18)     { background: var(--ws-3); }
+.sd-heatwave__strip > i:nth-child(n+22)     { background: var(--ws-4); }
+.sd-heatwave__strip > i:nth-child(n+26)     { background: var(--ws-5); }
+.sd-heatwave__strip > i:nth-child(n+30)     { background: var(--ws-6); }
+.sd-heatwave__strip > i:nth-child(n+34)     { background: var(--ws-7); }
+
+/* ── Dispatch divider ───────────────────────────────────────────── */
+.sd-dispatch__tape {
+  width: 100%;
+  height: 22px;
+  background:
+    linear-gradient(90deg, var(--c-bg) 0%, transparent 4%, transparent 96%, var(--c-bg) 100%),
+    repeating-linear-gradient(90deg, var(--c-line) 0 1px, transparent 1px 22px),
+    var(--c-bg-alt);
+  font-family: var(--f-mono);
+  font-size: 10.5px;
+  line-height: 22px;
+  white-space: nowrap;
+  color: var(--c-teal-deep);
+  letter-spacing: 0.16em;
+  overflow: hidden;
+  border-block: 1px solid var(--c-line);
+}
+.sd-dispatch__tape span {
+  display: inline-block;
+  animation: dispatchDivDrift 42s linear infinite;
+  padding-left: 1rem;
+}
+@keyframes dispatchDivDrift {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* ── Contour divider ────────────────────────────────────────────── */
+.sd-contour {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.4rem 0.5rem;
+}
+.sd-contour__chart {
+  display: contents;
+}
+.sd-contour__yaxis-wrap {
+  display: flex;
+  align-items: stretch;
+  gap: 0.35rem;
+}
+.sd-contour__yaxis-label {
+  font-family: var(--f-mono);
+  font-size: 0.58rem;
+  color: var(--c-ink-muted);
+  letter-spacing: 0.06em;
+  writing-mode: vertical-lr;
+  transform: rotate(180deg);
+  text-align: center;
+  white-space: nowrap;
+  line-height: 1;
+  align-self: center;
+}
+.sd-contour__yaxis {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-family: var(--f-mono);
+  font-size: 0.58rem;
+  color: var(--c-ink-muted);
+  text-align: right;
+  line-height: 1;
+}
+.sd-contour__yaxis li {
+  display: block;
+}
+.sd-contour__plot {
+  position: relative;
+  height: 56px;
+  border-block: 1px solid var(--c-line);
+  background: var(--c-bg-alt);
+}
+.sd-contour__plot svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+.sd-contour__grid line {
+  stroke: color-mix(in srgb, var(--c-line-strong) 55%, transparent);
+  stroke-width: 0.6;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 2 3;
+}
+.sd-contour__path {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  opacity: 0;
+  stroke-dasharray: 1300;
+  stroke-dashoffset: 1300;
+  animation: contourCycle var(--contour-cycle) linear infinite;
+}
+/* Thin variant: narrower stroke, slightly lower opacity */
+.sd-contour__path--thin {
+  stroke-width: 0.7;
+  opacity: 0;
+}
+/* Each pattern occupies 30s of a 300s loop (10 patterns × 30s):
+   - 0% → 10%       line draw left → right (30s)
+   - 10% → 100%     invisible until next iteration                       */
+@keyframes contourCycle {
+  0%        { opacity: 1; stroke-dashoffset: 1300; }
+  10%       { opacity: 1; stroke-dashoffset: 0;    }
+  10.0001%  { opacity: 0; stroke-dashoffset: 1300; }
+  100%      { opacity: 0; stroke-dashoffset: 1300; }
+}
+.sd-contour__footer {
+  grid-column: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.sd-contour__time {
+  font-family: var(--f-mono);
+  font-size: 0.58rem;
+  color: var(--c-ink-muted);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+.sd-contour__legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.85rem;
+  font-family: var(--f-mono);
+  font-size: 0.62rem;
+  color: var(--c-ink-muted);
+  letter-spacing: 0.06em;
+}
+.sd-contour__legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.sd-contour__swatch {
+  display: inline-block;
+  width: 22px;
+  height: 4px;
+}
+.sd-contour__code {
+  color: var(--c-ink);
+}
+
+/* ── Policy divider (CO₂ line + legislation bands) ─────────────── */
+.sd-policy {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-rows: 1fr auto;
+  gap: 0 0.5rem;
+  align-items: stretch;
+}
+/* Y-axis label */
+.sd-policy__ylabel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  grid-column: 1;
+  grid-row: 1;
+}
+.sd-policy__ylabel span {
+  font-family: var(--f-mono);
+  font-size: 0.56rem;
+  color: var(--c-ink-muted);
+  letter-spacing: 0.06em;
+  writing-mode: vertical-lr;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  line-height: 1;
+}
+/* Scrolling viewport */
+.sd-policy__viewport {
+  position: relative;
+  overflow: hidden;
+  border-block: 1px solid var(--c-line);
+  background: var(--c-bg-alt);
+  mask-image: linear-gradient(to right, transparent, black 2%, black 98%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 2%, black 98%, transparent);
+  grid-column: 2;
+  grid-row: 1;
+}
+.sd-policy__scroll {
+  display: flex;
+  animation: policyDrift var(--policy-dur) linear infinite;
+}
+@keyframes policyDrift {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.sd-policy__segment svg {
+  display: block;
+  width: 100%;
+  height: 72px;
+}
+/* Vertical legislation bands */
+.sd-policy__band {
+  opacity: 0.38;
+}
+/* Baseline & CO₂ line */
+.sd-policy__baseline {
+  stroke: var(--c-ink-muted);
+  stroke-width: 0.5;
+  stroke-dasharray: 4 3;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.3;
+}
+.sd-policy__line {
+  fill: none;
+  stroke: var(--c-ink);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.7;
+}
+/* ── Vertical gradient legend (right) ── */
+.sd-policy__vlegend {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding-block: 2px;
+  grid-column: 3;
+  grid-row: 1;
+}
+.sd-policy__vlegend-title {
+  font-family: var(--f-mono);
+  font-size: 0.5rem;
+  color: var(--c-ink-muted);
+  letter-spacing: 0.04em;
+  line-height: 1.25;
+  text-align: center;
+  text-transform: uppercase;
+  margin-bottom: 0.15rem;
+}
+.sd-policy__vlegend-label {
+  font-family: var(--f-mono);
+  font-size: 0.42rem;
+  color: var(--c-ink-muted);
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.sd-policy__vlegend-bar {
+  width: 6px;
+  flex: 1;
+  min-height: 20px;
+  border-radius: 3px;
+  background: linear-gradient(to bottom, #2c5d8a, #5a8db5, #9ebbd1, #d9d3c4, #e8b88a, #d97a4a, #b8401f);
+}
+/* TIME label (HTML, bottom-right of segment) */
+.sd-policy__segment {
+  flex-shrink: 0;
+}
+.sd-policy__time {
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: end;
+  font-family: var(--f-mono);
+  font-size: 0.52rem;
+  color: var(--c-ink-muted);
+  letter-spacing: 0.06em;
+  opacity: 0.55;
+  padding-top: 0.15rem;
+}
+
+/* ── Voice divider ──────────────────────────────────────────────── */
+.sd-voice__plot {
+  position: relative;
+  height: 56px;
+  background: var(--c-bg-alt);
+  border-block: 1px solid var(--c-line);
+  overflow: hidden;
+}
+.sd-voice__plot svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+.sd-voice__scroller {
+  animation: voiceScroll 5.5s linear infinite;
+}
+@keyframes voiceScroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.sd-voice__bar--a { fill: var(--c-teal-deep); }
+.sd-voice__bar--b { fill: var(--c-amber); }
+.sd-voice__baseline {
+  stroke: color-mix(in srgb, var(--c-ink) 22%, transparent);
+  stroke-width: 0.6;
+  vector-effect: non-scaling-stroke;
+}
+
+/* ── Network divider (Facebook social graph + globe) ────────────── */
+/* Keep the same constrained width as other divider variants. */
+.sd-network-full {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 0;
+  height: 56px;
+  background: var(--c-bg-alt);
+  border-block: 1px solid var(--c-line);
+  overflow: hidden;
+  position: relative;
+}
+.sd-network-full__globe {
+  width: 80px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.sd-network-full__globe svg {
+  width: 50px;
+  height: 50px;
+}
+.sd-nf-dot, .sd-nf-wave,
+.sd-netglobe-dot, .sd-netglobe-wave { pointer-events: none; }
+
+.sd-network__plot {
+  position: relative;
+  height: 56px;
+  overflow: hidden;
+}
+.sd-network__plot--inset {
+  background: transparent;
+  border-block: none;
+}
+.sd-network__plot svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.sd-network__glyphs {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+/* Glyphs — JS-triggered, no CSS animation by default. */
+.sd-network__glyph {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  font-family: var(--f-mono);
+  font-size: 0.87rem;
+  line-height: 1;
+  opacity: 0;
+}
+.sd-network__glyph--heart { color: #e8503a; }
+.sd-network__glyph--haha  { color: #f7b928; }
+.sd-network__glyph--wow   { color: #f7b928; }
+.sd-network__glyph--sad   { color: #f7b928; }
+.sd-network__glyph--angry { color: #e8503a; }
+.sd-network__glyph--thumb {
+  display: block;
+  width: 11.3px;
+  height: 11.3px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><path fill='%231877f2' d='M313.4 32.9c26 5.2 42.9 30.5 37.7 56.5l-2.3 11.4c-5.3 26.7-15.1 52.1-28.8 75.2H464c26.5 0 48 21.5 48 48c0 18.5-10.5 34.6-25.9 42.6C497 275.4 504 288.9 504 304c0 23.4-16.8 42.9-38.9 47.1c4.4 7.3 6.9 15.8 6.9 24.9c0 21.3-13.9 39.4-33.1 45.6c.7 3.3 1.1 6.8 1.1 10.4c0 26.5-21.5 48-48 48H294.5c-19 0-37.5-5.6-53.3-16.1l-38.5-25.7C176 420.4 160 390.4 160 358.3V320 247.1c0-29.2 13.3-56.7 36-75.1c16.3-13.2 29.4-30 38.3-49.1L262.3 61.7c12.7-26.3 39.3-43 68.4-43c1.9 0 3.8 .1 5.7 .3zM32 192H96c17.7 0 32 14.3 32 32V448c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32V224c0-17.7 14.3-32 32-32z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  font-size: 0;
+}
+
+/* Soundwave ring that crosses from globe into network */
+.sd-network__wave-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.sd-network__wave-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation: netWaveExpand 7s linear forwards;
+}
+@keyframes netWaveExpand {
+  0%   { width: 8px; height: 8px; opacity: 0.55; }
+  100% { width: 4000px; height: 4000px; opacity: 0; }
+}
+.sd-network__edge {
+  stroke: var(--c-ink-muted);
+  stroke-width: 0.6;
+  stroke-opacity: 0.30;
+  vector-effect: non-scaling-stroke;
+  animation: netEdgeFlicker 3.4s ease-in-out infinite;
+}
+@keyframes netEdgeFlicker {
+  0%, 100% { stroke-opacity: 0.16; }
+  50%      { stroke-opacity: 0.55; }
+}
+.sd-network__node {
+  fill: var(--c-ink-muted);
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: netNodePulse 3.8s ease-in-out infinite;
+}
+@keyframes netNodePulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.25); }
+}
+.sd-network__node--hub {
+  fill: var(--c-teal-deep);
+  animation: netHubPulse 4.6s ease-in-out infinite;
+}
+@keyframes netHubPulse {
+  0%, 100% { transform: scale(1);    fill: var(--c-ink); }
+  50%      { transform: scale(1.45); fill: var(--c-teal-deep); }
+}
+
+/* ── Newsfeed divider (globe + news ticker) ── */
+.sd-newsfeed {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 0;
+  align-items: center;
+  height: 56px;
+  background: var(--c-bg-alt);
+  border-block: 1px solid var(--c-line);
+  overflow: hidden;
+  width: 100%;
+  position: relative;
+}
+.sd-newsfeed__globe {
+  width: 80px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+.sd-newsfeed__globe svg {
+  width: 50px;
+  height: 50px;
+}
+
+/* Dots are JS-driven (no CSS animation). */
+.sd-nf-dot { pointer-events: none; }
+
+/* Combined content area: network graph (bg) + glyphs + ticker (fg) */
+.sd-newsfeed__content {
+  position: relative;
+  height: 56px;
+  overflow: hidden;
+}
+/* ── News ticker ─────────────────── */
+.sd-newsfeed__ticker {
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+.sd-newsfeed__item {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.12rem;
+  padding: 0.3rem 1.2rem;
+  height: 100%;
+  max-width: 90%;
+  box-sizing: border-box;
+  opacity: 0;
+}
+.sd-newsfeed__source {
+  font-family: var(--f-mono);
+  font-size: 0.56rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  line-height: 1;
+}
+.sd-newsfeed__headline {
+  font-family: var(--f-sans);
+  font-size: 0.7rem;
+  font-weight: 400;
+  line-height: 1.3;
+  color: var(--c-ink-soft);
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.sd-newsfeed__meta {
+  font-family: var(--f-mono);
+  font-size: 0.5rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--c-ink-muted);
+  white-space: nowrap;
+  line-height: 1;
+}
+
+/* Wave overlay — spans globe and ticker */
+.sd-newsfeed__wave-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+.sd-nf-cross-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1.5px solid;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  width: 0;
+  height: 0;
+  opacity: 0;
+}
+
+@media (max-width: 500px) {
+  .sd-newsfeed {
+    grid-template-columns: 56px 1fr;
+  }
+  .sd-newsfeed__globe { width: 56px; }
+  .sd-newsfeed__globe svg { width: 42px; height: 42px; }
+  .sd-newsfeed__item { max-width: 90%; padding: 0.3rem 0.8rem; }
+}
+
+/* ── Rollcall divider (elongated plenary chamber) ───────────────── */
+.sd-rollcall__plot {
+  height: 56px;
+  background: var(--c-bg-alt);
+  border-block: 1px solid var(--c-line);
+  overflow: hidden;
+}
+.sd-rollcall__plot svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.sd-rollcall__desk {
+  fill: var(--c-line-strong);
+}
+.sd-rollcall__wave {
+  vector-effect: non-scaling-stroke;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sd-dispatch__tape span,
+  .sd-voice__scroller,
+  .sd-contour__path,
+  .sd-policy__scroll,
+  .sd-network__edge,
+  .sd-network__node,
+  .sd-network__node--hub,
+  .sd-newsfeed__ticker,
+  .sd-network__wave-ring,
+  .sd-nf-cross-ring { animation: none !important; }
+  .sd-contour__path { stroke-dashoffset: 0; stroke-dasharray: 1300; }
+  .sd-rollcall__mp animate,
+  .sd-rollcall__wave animate { display: none; }
+}
+

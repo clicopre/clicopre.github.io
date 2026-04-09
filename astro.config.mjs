@@ -1,4 +1,5 @@
 import { defineConfig } from 'astro/config';
+import sitemap from '@astrojs/sitemap';
 
 // https://astro.build/config
 // For a user/org GitHub Pages site (clicopre.github.io) the site is served
@@ -7,6 +8,7 @@ import { defineConfig } from 'astro/config';
 export default defineConfig({
   site: 'https://clicopre.github.io',
   trailingSlash: 'ignore',
+  integrations: [sitemap()],
   build: {
     assets: 'assets',
   },

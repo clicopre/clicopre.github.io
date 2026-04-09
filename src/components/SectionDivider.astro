@@ -1,0 +1,1723 @@
+---
+// Compact inter-section dividers — small data-vis "interludes" between
+// sections. No titles inside the viz; only an optional caption underneath.
+//
+//   heatwave  → climate · warming stripes
+//   dispatch  → media flow · varied wire-service tape (drift left)
+//   contour   → cross-country engagement · lines draw left → right
+//   voice     → political talk-radio · two stacked speakers, fast waveform
+//   network   → social media · Facebook ego-graph + hearts/hashtags
+//   rollcall  → parliament · seats + 1 traveler at a time, soundwaves at desk
+
+interface Props {
+  variant: 'heatwave' | 'dispatch' | 'contour' | 'voice' | 'network' | 'rollcall' | 'newsfeed' | 'policy';
+  caption?: string;
+}
+
+const { variant, caption } = Astro.props;
+
+// ── Dispatch (wire-service teletype) ────────────────────────────
+const dispatchFragments = [
+  '— REUTERS', '· DG ·', 'COPENHAGEN', '— DISPATCH', '·· — ·', 'BRUSSELS',
+  '— ANALYSIS', '· · WIRE', 'BERLIN', '— UPDATE', '·· POLL', 'MADRID',
+  '— BREAKING', '· OPINION', 'WARSAW', '— BULLETIN', '·· EDIT', 'PRAGA',
+  '— REUTERS-AP', '· COMMENT', 'LISBOA', '— EMBARGO', '·· DRAFT', 'ROMA',
+  '— FILED', '· · DRAFT', 'PARIS', '— RECAST', '·· LEDE', 'WASHINGTON',
+  '— REWRITE', '· STET', 'BUDAPEST', '— SLUG', '·· KILL', 'ATHENS',
+  '— UNCONFIRMED', '· BACKGROUND', 'STOCKHOLM', '— OFF-RECORD', '·· FEED',
+  'OSLO', '— EMBARGOED', '· — ·', 'DUBLIN', '— SOURCED', '·· LEAK',
+];
+const dispatchTape = (() => {
+  const out: string[] = [];
+  for (let i = 0; i < dispatchFragments.length * 3; i++) {
+    out.push(dispatchFragments[(i * 7 + 3) % dispatchFragments.length]);
+  }
+  return out.join(' · ');
+})();
+const dispatchTapeLong = dispatchTape + '  ·  ' + dispatchTape;
+
+// ── Contour (16 countries — US + 15 EU; 10 loops × 5 countries) ───
+// 8-colour palette that repeats: countries 0-7 use solid lines,
+// countries 8-15 reuse the same 8 colours with dashed lines.
+const contourPalette = [
+  '#2c5d8a', '#b8401f', '#0a8a7a', '#c9722b',
+  '#6b3fa0', '#4a8c3a', '#c44535', '#0e1d28',
+];
+const contourCountries = [
+  { code: 'BE',  label: 'Belgium',        color: contourPalette[0], thin: false },
+  { code: 'CZ',  label: 'Czechia',        color: contourPalette[1], thin: false },
+  { code: 'DK',  label: 'Denmark',        color: contourPalette[2], thin: false },
+  { code: 'FI',  label: 'Finland',        color: contourPalette[3], thin: false },
+  { code: 'FR',  label: 'France',         color: contourPalette[4], thin: false },
+  { code: 'DE',  label: 'Germany',        color: contourPalette[5], thin: false },
+  { code: 'IE',  label: 'Ireland',        color: contourPalette[6], thin: false },
+  { code: 'IT',  label: 'Italy',          color: contourPalette[7], thin: false },
+  { code: 'NL',  label: 'Netherlands',    color: contourPalette[0], thin: true },
+  { code: 'PL',  label: 'Poland',         color: contourPalette[1], thin: true },
+  { code: 'PT',  label: 'Portugal',       color: contourPalette[2], thin: true },
+  { code: 'RO',  label: 'Romania',        color: contourPalette[3], thin: true },
+  { code: 'SK',  label: 'Slovakia',       color: contourPalette[4], thin: true },
+  { code: 'ES',  label: 'Spain',          color: contourPalette[5], thin: true },
+  { code: 'UK',  label: 'United Kingdom', color: contourPalette[6], thin: true },
+  { code: 'US',  label: 'United States',  color: contourPalette[7], thin: true },
+];
+
+// Round-robin schedule: 10 loops × 5 country indices each, picked from
+// 0..15 in sequence (wrapping). Index i appears at positions i, i+16,
+// i+32 of the flat sequence; the extra 2 positions (49, 50) recycle the
+// first two countries. Result: 14 countries appear 3×, 2 appear 4×.
+const contourPatternCount = 10;
+const contourLinesPerPattern = 6;
+const contourPatternCountries: number[][] = Array.from(
+  { length: contourPatternCount },
+  (_, p) =>
+    Array.from(
+      { length: contourLinesPerPattern },
+      (_, j) => (p * contourLinesPerPattern + j) % contourCountries.length,
+    ),
+);
+
+// y-axis is 0–100; the SVG viewBox uses 0–100 for y so values map directly.
+const cW = 1200;
+const cH = 100;
+const segs = 220;
+const contourCap = 96; // no peak ever reaches the 100% line
+
+// One path per (pattern, country-in-pattern). The shape is seeded by
+// the country's index (so each country has its own characteristic
+// silhouette) and varied by the pattern index.
+type ContourLine = { d: string; countryIdx: number; thin: boolean };
+const contourPatterns: ContourLine[][] = contourPatternCountries.map((countryIndices, p) => {
+  return countryIndices.map((countryIdx, j) => {
+    const row = countryIdx;
+    const peaks = [
+      { pos: cW * (0.08 + 0.05 * ((row + p)     % 5)), amp: 58 + ((row * 11 + p * 17) % 30), sig: cW * 0.030 },
+      { pos: cW * (0.30 + 0.06 * ((row + p * 2) % 4)), amp: 50 + ((row * 7  + p * 13) % 38), sig: cW * 0.038 },
+      { pos: cW * (0.55 + 0.05 * ((row + p + 1) % 4)), amp: 64 + ((row * 5  + p * 19) % 30), sig: cW * 0.034 },
+      { pos: cW * (0.82 + 0.04 * ((row + p * 3) % 4)), amp: 56 + ((row * 13 + p * 11) % 36), sig: cW * 0.032 },
+    ];
+    const pts: string[] = [];
+    for (let i = 0; i <= segs; i++) {
+      const x = (i / segs) * cW;
+      let v =
+        7 +
+        Math.sin(x * 0.010 + row * 1.3 + p * 0.9) * 2.0 +
+        Math.sin(x * 0.027 + row * 0.7 + p * 1.7) * 1.3 +
+        Math.sin(x * 0.061 + row * 2.1 + p * 0.4) * 0.7;
+      for (const pk of peaks) {
+        const d = x - pk.pos;
+        v += pk.amp * Math.exp(-(d * d) / (2 * pk.sig * pk.sig));
+      }
+      v = Math.max(0, Math.min(contourCap, v));
+      const y = cH - v * (cH / 100);
+      pts.push(`${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`);
+    }
+    // Vary thin/normal weight per loop so each pattern shows a different mix
+    const thin = ((p * 3 + j * 7) % 6) < 3;
+    return { d: pts.join(' '), countryIdx, thin };
+  });
+});
+
+// Each pattern: 30s draw + a brief hold (4s) at the end. Then
+// the next pattern starts. The whole loop strings the 10 patterns
+// together back-to-back.
+const contourDrawDur = 30;
+const contourHoldDur = 0;
+const contourPatternDur = contourDrawDur + contourHoldDur; // 190s
+const contourCycleDur = contourPatternDur * contourPatternCount; // 1900s
+// Stops (as fractions of the whole cycle) for the per-path keyframe.
+const contourDrawStop = (contourDrawDur / contourCycleDur * 100).toFixed(4);
+const contourHoldStop = (contourPatternDur / contourCycleDur * 100).toFixed(4);
+
+// ── Policy (CO₂ emissions reacting to legislation) ─────────────
+// A single chart: erratic CO₂ line + vertical colored bands at each
+// legislation event. Strong climate policy (blue, heat 0) pushes the
+// line down; weak / rhetoric (red, heat 6) pushes it up. Vertical
+// gradient legend on the right maps colour to policy strength 0–1.
+
+const wsColors = ['#2c5d8a','#5a8db5','#9ebbd1','#d9d3c4','#e8b88a','#d97a4a','#b8401f'];
+
+type PolicyItem = { text: string; heat: number };
+const policyItems: PolicyItem[] = [
+  { text: 'H.R. 1247 Energy Jobs',       heat: 5 },
+  { text: 'Clean Air Act §4.2',           heat: 1 },
+  { text: 'Res. 445 Growth Priority',     heat: 4 },
+  { text: 'EU ETS Phase IV',              heat: 0 },
+  { text: 'S. 892 Tax Relief',            heat: 5 },
+  { text: 'H.R. 3340 Deregulation',       heat: 6 },
+  { text: 'Res. 119 Market Freedom',      heat: 5 },
+  { text: 'S. 201 Industrial Comp.',      heat: 6 },
+  { text: 'H.R. 888 Energy Security',     heat: 4 },
+  { text: 'Carbon Border Adj. Mech.',     heat: 0 },
+  { text: 'Green Deal Fit-for-55',        heat: 0 },
+  { text: 'Methane Reduction Dir.',       heat: 1 },
+  { text: 'CO₂ Monitoring Reg.',          heat: 1 },
+  { text: 'Renewable Portfolio Std.',     heat: 0 },
+  { text: 'Res. 672 Fiscal Balance',      heat: 5 },
+  { text: 'LULUCF Regulation',            heat: 1 },
+  { text: 'S. 1450 Job Creation',         heat: 4 },
+  { text: 'Emissions Trading Dir.',       heat: 0 },
+  { text: 'H.R. 2214 Energy Indep.',      heat: 5 },
+  { text: 'Climate Adaptation Fund',      heat: 0 },
+  { text: 'Zero-Emission Vehicle Std.',   heat: 1 },
+  { text: 'Nature Restoration Law',       heat: 0 },
+  { text: 'Carbon Capture Incentive',     heat: 1 },
+  { text: 'Sust. Finance Disclosure',     heat: 2 },
+  { text: 'Res. 333 Competitiveness',     heat: 5 },
+  { text: 'S. 478 Tax Simplification',    heat: 4 },
+  { text: 'H.R. 5512 Growth Pact',        heat: 6 },
+  { text: 'Res. 890 Market Access',       heat: 5 },
+  { text: 'S. 311 Regulatory Relief',     heat: 6 },
+  { text: 'Net-Zero Industry Act',        heat: 2 },
+  { text: 'Dir. 2024/1 Climate Target',   heat: 3 },
+];
+
+const policyBandW = 4;
+const policyChartH = 72;
+const policyDur = 80;
+
+// Deterministic pseudo-random
+let _pSeed = 42;
+const pRand = () => { _pSeed = (_pSeed * 1664525 + 1013904223) & 0x7fffffff; return _pSeed / 0x7fffffff; };
+
+// Position each legislation event with irregular spacing
+const policyEvents: { x: number; heat: number; text: string; color: string }[] = [];
+let pX = 30;
+policyItems.forEach((item) => {
+  policyEvents.push({ x: pX, heat: item.heat, text: item.text, color: wsColors[item.heat] });
+  pX += policyBandW + 55 + Math.floor(pRand() * 65);
+});
+const policyTotalW = pX + 30;
+
+// Generate erratic CO₂ line that reacts to legislation
+// Effect is delayed ~20px after each band and bleeds out over ~60px
+const pStep = 7;
+const pLinePts: { x: number; y: number }[] = [];
+let co2 = policyChartH * 0.45;
+let evtIdx = 0;
+const pDelay = 20;  // px after band before effect starts
+const pDecay = 0.92; // per-step decay of accumulated impulse
+let impulse = 0;    // accumulated push waiting to bleed in
+const pendingQueue: { xStart: number; strength: number }[] = [];
+for (let x = 0; x <= policyTotalW; x += pStep) {
+  // Queue new impulses from legislation events
+  while (evtIdx < policyEvents.length && x >= policyEvents[evtIdx].x) {
+    const h = policyEvents[evtIdx].heat;
+    pendingQueue.push({ xStart: policyEvents[evtIdx].x + pDelay, strength: (3 - h) * 1.6 });
+    evtIdx++;
+  }
+  // Activate queued impulses that have passed their delay
+  for (let q = pendingQueue.length - 1; q >= 0; q--) {
+    if (x >= pendingQueue[q].xStart) {
+      impulse += pendingQueue[q].strength;
+      pendingQueue.splice(q, 1);
+    }
+  }
+  co2 += impulse * 0.18; // bleed impulse into position gradually
+  impulse *= pDecay;      // decay the impulse over time
+  co2 += (pRand() - 0.5) * 3.8;
+  co2 += Math.sin(x * 0.035) * 0.6;
+  co2 = Math.max(5, Math.min(policyChartH - 5, co2));
+  pLinePts.push({ x, y: co2 });
+}
+// Converge last points toward start for seamless loop
+const startY = pLinePts[0].y;
+for (let i = 0; i < 10; i++) {
+  const idx = pLinePts.length - 10 + i;
+  const t = (i + 1) / 10;
+  pLinePts[idx].y = pLinePts[idx].y * (1 - t) + startY * t;
+}
+
+// Smooth path via Catmull-Rom → cubic Bézier
+function catmullRomPath(pts: { x: number; y: number }[]): string {
+  if (pts.length < 2) return '';
+  const d: string[] = [`M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[Math.max(0, i - 1)];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[Math.min(pts.length - 1, i + 2)];
+    const tension = 0.35;
+    const cp1x = p1.x + (p2.x - p0.x) * tension;
+    const cp1y = p1.y + (p2.y - p0.y) * tension;
+    const cp2x = p2.x - (p3.x - p1.x) * tension;
+    const cp2y = p2.y - (p3.y - p1.y) * tension;
+    d.push(`C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)} ${cp2x.toFixed(1)} ${cp2y.toFixed(1)} ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`);
+  }
+  return d.join(' ');
+}
+
+const policyLinePath = catmullRomPath(pLinePts);
+
+// ── Voice (two stacked speakers, fast scrolling waveform) ───────
+const voiceBarCount = 280;
+const voiceBarW = 2.5;
+const voiceBarGap = 1.6;
+const voiceTrackH = 32;
+const voiceMid = voiceTrackH;
+const voiceTotalH = voiceTrackH * 2;
+const voiceTotalW = voiceBarCount * (voiceBarW + voiceBarGap);
+
+const turnEnv = (i: number, speaker: 0 | 1) => {
+  const phase = speaker === 0 ? 0 : Math.PI;
+  const slow = 0.5 + 0.5 * Math.tanh(2.6 * Math.sin(i * 0.018 + phase));
+  const arc = 0.55 + 0.45 * Math.sin(i * 0.06 + phase * 0.4);
+  return Math.max(0.04, slow * arc);
+};
+
+const speakerA = Array.from({ length: voiceBarCount }, (_, i) => {
+  const v =
+    Math.abs(Math.sin(i * 0.41 + 0.6)) * 0.40 +
+    Math.abs(Math.sin(i * 1.13 + 1.3)) * 0.30 +
+    Math.abs(Math.sin(i * 2.71 + 0.2)) * 0.20 +
+    Math.abs(Math.sin(i * 5.30 + 1.9)) * 0.10;
+  return Math.max(0.04, Math.min(1, v * turnEnv(i, 0)));
+});
+const speakerB = Array.from({ length: voiceBarCount }, (_, i) => {
+  const v =
+    Math.abs(Math.sin((i + 41) * 0.47 + 0.9)) * 0.40 +
+    Math.abs(Math.sin((i + 41) * 1.21 + 0.5)) * 0.30 +
+    Math.abs(Math.sin((i + 41) * 2.83 + 1.7)) * 0.20 +
+    Math.abs(Math.sin((i + 41) * 5.91 + 0.8)) * 0.10;
+  return Math.max(0.04, Math.min(1, v * turnEnv(i, 1)));
+});
+
+// ── Network (Facebook social graph) ─────────────────────────────
+// ~92 organically scattered nodes. Each node has its own target degree
+// (1–8) and connects to that many nearest neighbours (resulting graph
+// can have higher degree where others link in). A small set of glyphs
+// — hearts and hashtags — pop briefly above some vertices.
+const netW = 1200;
+const netH = 60;
+const netNodeCount = 92;
+
+const netRand = (i: number, salt: number) => {
+  const s = Math.sin(i * 12.9898 + salt * 78.233) * 43758.5453;
+  return s - Math.floor(s);
+};
+
+type NetNode = { x: number; y: number; r: number; isHub: boolean };
+const netNodes: NetNode[] = Array.from({ length: netNodeCount }, (_, i) => {
+  const x = 12 + netRand(i, 1) * (netW - 24);
+  const y = 5 + netRand(i, 2) * (netH - 10);
+  const isHub = (i * 11 + 3) % 11 === 0;
+  const r = isHub ? 3.2 : 1.6 + netRand(i, 3) * 1.0;
+  return { x, y, r, isHub };
+});
+
+// Per-node target degree in [1, 8], deterministic.
+const netTargetDegree = (i: number) => 1 + ((i * 13 + 7) % 8);
+
+const netEdgeKeys = new Set<string>();
+const netEdges: { a: number; b: number }[] = [];
+const addEdge = (a: number, b: number) => {
+  const lo = Math.min(a, b);
+  const hi = Math.max(a, b);
+  const key = `${lo}-${hi}`;
+  if (!netEdgeKeys.has(key)) {
+    netEdgeKeys.add(key);
+    netEdges.push({ a: lo, b: hi });
+  }
+};
+for (let i = 0; i < netNodes.length; i++) {
+  const k = netTargetDegree(i);
+  const sorted = netNodes
+    .map((n, j) => ({ j, d: Math.hypot(n.x - netNodes[i].x, n.y - netNodes[i].y) }))
+    .filter(({ j }) => j !== i)
+    .sort((p, q) => p.d - q.d)
+    .slice(0, k);
+  for (const { j } of sorted) addEdge(i, j);
+}
+
+// Identify connected components via union-find, then bridge the two
+// largest components with two new "hub" vertices placed midway between
+// their centroids.
+const netParent = Array.from({ length: netNodes.length }, (_, i) => i);
+const netFind = (x: number): number => {
+  let r = x;
+  while (netParent[r] !== r) r = netParent[r];
+  while (netParent[x] !== r) {
+    const next = netParent[x];
+    netParent[x] = r;
+    x = next;
+  }
+  return r;
+};
+const netUnion = (a: number, b: number) => {
+  const ra = netFind(a);
+  const rb = netFind(b);
+  if (ra !== rb) netParent[ra] = rb;
+};
+for (const e of netEdges) netUnion(e.a, e.b);
+
+const netCompMap = new Map<number, number[]>();
+for (let i = 0; i < netNodes.length; i++) {
+  const r = netFind(i);
+  if (!netCompMap.has(r)) netCompMap.set(r, []);
+  netCompMap.get(r)!.push(i);
+}
+const netComponents = Array.from(netCompMap.values()).sort((a, b) => b.length - a.length);
+
+if (netComponents.length >= 2) {
+  const compA = netComponents[0];
+  const compB = netComponents[1];
+  const centroid = (idxs: number[]) => {
+    let sx = 0, sy = 0;
+    for (const i of idxs) { sx += netNodes[i].x; sy += netNodes[i].y; }
+    return { x: sx / idxs.length, y: sy / idxs.length };
+  };
+  const cA = centroid(compA);
+  const cB = centroid(compB);
+  const mx = (cA.x + cB.x) / 2;
+  const my = (cA.y + cB.y) / 2;
+  const bridge1Idx = netNodes.length;
+  netNodes.push({ x: mx - 18, y: my - 4, r: 2.4, isHub: true });
+  const bridge2Idx = netNodes.length;
+  netNodes.push({ x: mx + 18, y: my + 4, r: 2.4, isHub: true });
+
+  const nearestIn = (idxs: number[], from: { x: number; y: number }) => {
+    let best = idxs[0];
+    let bd = Infinity;
+    for (const i of idxs) {
+      const d = Math.hypot(netNodes[i].x - from.x, netNodes[i].y - from.y);
+      if (d < bd) { bd = d; best = i; }
+    }
+    return best;
+  };
+  addEdge(bridge1Idx, nearestIn(compA, netNodes[bridge1Idx]));
+  addEdge(bridge1Idx, nearestIn(compB, netNodes[bridge1Idx]));
+  addEdge(bridge2Idx, nearestIn(compA, netNodes[bridge2Idx]));
+  addEdge(bridge2Idx, nearestIn(compB, netNodes[bridge2Idx]));
+  addEdge(bridge1Idx, bridge2Idx);
+}
+
+// Glyphs — small overlay symbols that pop and fade above some
+// nodes. All six Facebook reactions. Positioned via percentage.
+const netGlyphKinds = ['heart', 'thumb', 'haha', 'wow', 'sad', 'angry'] as const;
+const netGlyphs = Array.from({ length: 30 }, (_, i) => {
+  const nodeIdx = (i * 7 + 5) % netNodes.length;
+  const node = netNodes[nodeIdx];
+  return {
+    leftPct: ((node.x / netW) * 100).toFixed(2),
+    topPct: ((node.y / netH) * 100).toFixed(2),
+    kind: netGlyphKinds[i % 6],
+    delay: ((i * 0.71) % 9).toFixed(2),
+  };
+});
+
+// Network globe dots — 10 positions cycling every ~8s. Each flash
+// sends a soundwave across the network graph, triggering reactions.
+const netGlobeDots = [
+  { lat: 51.5, lon: -0.1 },   // London
+  { lat: 40.7, lon: -74.0 },  // New York
+  { lat: 48.9, lon: 2.3 },    // Paris
+  { lat: 35.7, lon: 139.7 },  // Tokyo
+  { lat: -22.9, lon: -43.2 }, // Rio
+  { lat: 38.9, lon: -77.0 },  // Washington
+  { lat: 50.1, lon: 8.7 },    // Frankfurt
+  { lat: -33.9, lon: 18.4 },  // Cape Town
+  { lat: 37.6, lon: 127.0 },  // Seoul
+  { lat: 46.2, lon: 6.1 },    // Geneva
+].map((d, i) => ({
+  lat: (d.lat / 180) * Math.PI,
+  lon: (d.lon / 180) * Math.PI,
+  color: ['#2c5d8a', '#b8401f', '#0a8a7a', '#6b3fa0', '#c9722b',
+          '#8b3a4f', '#0e1d28', '#5a8db5', '#c44535', '#4d4d8a'][i],
+}));
+const netGlobeDotsJSON = JSON.stringify(netGlobeDots);
+const netGlyphDataJSON = JSON.stringify(netGlyphs.map(g => ({
+  leftPct: parseFloat(g.leftPct),
+  topPct: parseFloat(g.topPct),
+  kind: g.kind,
+})));
+
+// ── Rollcall (elongated plenary chamber + 1-at-a-time speakers) ───
+// 228 static seats over 4 elongated arcs. A cycle of 8 speakers walk
+// to the desk one at a time. At the desk, the MP stays for ~5.6 seconds
+// while hemicyclic "soundwaves" of its party colour expand outward into
+// the chamber. After each wave reaches the rows, every other seat has a
+// 0.8 probability of shifting to the speaker's party colour, and 0.2 of
+// shifting against it. The whole sequence loops indefinitely.
+const rcW = 1200;
+const rcH = 60;
+const rcCx = rcW / 2;
+const rcCy = rcH; // virtual centre on the bottom edge — arcs sweep upward
+
+const rcRows = [
+  { rx: 360, ry: 22, count: 44 },
+  { rx: 460, ry: 32, count: 53 },
+  { rx: 540, ry: 42, count: 62 },
+  { rx: 590, ry: 53, count: 69 },
+];
+
+const rcParties = [
+  '#2c5d8a',
+  '#5a8db5',
+  '#0a8a7a',
+  '#6b7985',
+  '#c9722b',
+  '#b8401f',
+];
+
+// Seats are sampled by *arc length* (rather than uniform angle) over a
+// reduced angular sweep, so they don't pile up at the edges and look
+// evenly distributed across the chamber.
+const rcAngleMin = Math.PI * 0.10;
+const rcAngleMax = Math.PI * 0.90;
+function evenArcAngles(rx: number, ry: number, count: number): number[] {
+  const samples = 240;
+  const cum: number[] = [0];
+  const angs: number[] = [rcAngleMin];
+  let prevX = rx * Math.cos(rcAngleMin);
+  let prevY = ry * Math.sin(rcAngleMin);
+  for (let i = 1; i <= samples; i++) {
+    const a = rcAngleMin + (rcAngleMax - rcAngleMin) * (i / samples);
+    const x = rx * Math.cos(a);
+    const y = ry * Math.sin(a);
+    cum.push(cum[cum.length - 1] + Math.hypot(x - prevX, y - prevY));
+    angs.push(a);
+    prevX = x; prevY = y;
+  }
+  const total = cum[cum.length - 1];
+  const out: number[] = [];
+  for (let k = 0; k < count; k++) {
+    // k=0 → leftmost (highest angle); k=count-1 → rightmost (lowest angle).
+    const target = total - (count === 1 ? total / 2 : (k / (count - 1)) * total);
+    let i = 0;
+    while (i < cum.length - 1 && cum[i + 1] < target) i++;
+    const span = cum[i + 1] - cum[i] || 1;
+    const f = (target - cum[i]) / span;
+    out.push(angs[i] + f * (angs[i + 1] - angs[i]));
+  }
+  return out;
+}
+
+type RcSeat = { x: number; y: number; r: number; party: string };
+const rcSeats: RcSeat[] = [];
+for (const row of rcRows) {
+  const angles = evenArcAngles(row.rx, row.ry, row.count);
+  for (let i = 0; i < row.count; i++) {
+    const t = i / (row.count - 1);
+    const angle = angles[i];
+    const x = rcCx + row.rx * Math.cos(angle);
+    const y = rcCy - row.ry * Math.sin(angle);
+    const partyIdx = Math.min(rcParties.length - 1, Math.floor(t * rcParties.length));
+    rcSeats.push({ x, y, r: 2.48, party: rcParties[partyIdx] });
+  }
+}
+
+// Desk: 3× thicker than before (h was 2 → now 6). Width unchanged.
+const rcDeskHalfW = 14;
+const rcDeskHalfH = 3;
+const rcDeskX = rcCx;
+const rcDeskY = rcH - 4;
+
+// Eight speakers cycling. Sequential timing; the cycle then loops.
+// Walks are 2× slower than before; soundwaves are 3× slower (so the
+// desk stay is extended to fit three of them).
+const rcSpeakerSeats = [12, 200, 73, 158, 38, 102, 22, 215];
+const rcSpeakerSet = new Set(rcSpeakerSeats);
+const rcWalkOut = 2.4;
+const rcDeskStay = 12.0;
+const rcWalkBack = 2.4;
+const rcSlotDur = rcWalkOut + rcDeskStay + rcWalkBack; // 16.8s
+const rcCycleDur = rcSlotDur * rcSpeakerSeats.length;  // 134.4s
+
+// keyTimes (as fractions of rcCycleDur) for the MP cx/cy/fill animation.
+const kT0 = 0;
+const kT1 = rcWalkOut / rcCycleDur;
+const kT2 = (rcWalkOut + rcDeskStay) / rcCycleDur;
+const kT3 = (rcWalkOut + rcDeskStay + rcWalkBack) / rcCycleDur;
+const mpKeyTimes = `${kT0};${kT1.toFixed(5)};${kT2.toFixed(5)};${kT3.toFixed(5)};1`;
+
+// Three hemicyclic soundwaves per speaker, 3× slower than before.
+// Offsets are seconds from slot start; they all complete before the
+// MP starts walking back.
+const waveOffsetsSec = [2.6, 6.0, 9.4];
+const waveDurSec = 4.5;
+// Colour shift fires when the THIRD wave reaches the rows
+// (its mid-burst, in slot-relative seconds).
+const colorShiftSlotTime = waveOffsetsSec[2] + waveDurSec * 0.55; // ≈ 11.9s
+
+const rcSpeakers = rcSpeakerSeats.map((idx, k) => {
+  const seat = rcSeats[idx];
+  return {
+    idx,
+    seat,
+    dx: rcDeskX,            // middle of desk length
+    dy: rcDeskY - 5,        // behind (above) the desk
+    begin: k * rcSlotDur,
+  };
+});
+
+// Per-seat colour timelines. Discrete fill changes happen at the moment
+// each speaker's first wave reaches the rows. With prob 0.8 the seat
+// shifts to the speaker's party colour; with prob 0.2 it shifts to the
+// "opposite" party (mirrored across the spectrum).
+const rcRand = (i: number, j: number) => {
+  const s = Math.sin(i * 374.31 + j * 91.7) * 91283.71;
+  return s - Math.floor(s);
+};
+
+const rcColorKeyTimesArr: string[] = ['0'];
+for (let k = 0; k < rcSpeakerSeats.length; k++) {
+  const t = (k * rcSlotDur + colorShiftSlotTime) / rcCycleDur;
+  rcColorKeyTimesArr.push(t.toFixed(5));
+}
+rcColorKeyTimesArr.push('1');
+const rcColorKeyTimes = rcColorKeyTimesArr.join(';');
+
+// 50/50 split: each non-speaker seat either takes the speaker's colour
+// or keeps its original colour from t=0. This is independent for each
+// speaker — no cumulative drift.
+const rcSeatTimelines = rcSeats.map((seat) => [seat.party]);
+rcSpeakerSeats.forEach((sIdx, k) => {
+  const speaker = rcSeats[sIdx];
+  rcSeats.forEach((seat, i) => {
+    if (i === sIdx || rcSpeakerSet.has(i)) {
+      rcSeatTimelines[i].push(rcSeatTimelines[i][rcSeatTimelines[i].length - 1]);
+      return;
+    }
+    const r = rcRand(i, k);
+    rcSeatTimelines[i].push(r < 0.5 ? speaker.party : seat.party);
+  });
+});
+// Reset back to initial colour at the end of the cycle so the loop is clean.
+rcSeats.forEach((seat, i) => rcSeatTimelines[i].push(seat.party));
+
+// Desk colour timeline: takes the speaker's party colour while they
+// stand behind it; reverts between speakers. Neutral colour is the
+// animation background (--c-bg-alt = #ebe7da) made a tad darker.
+const rcDeskNeutral = '#c8c4b6';
+const rcDeskKeyTimesArr: string[] = ['0'];
+const rcDeskColorsArr: string[] = [rcDeskNeutral];
+for (let k = 0; k < rcSpeakerSeats.length; k++) {
+  const tIn = (k * rcSlotDur + rcWalkOut) / rcCycleDur;
+  const tOut = (k * rcSlotDur + rcWalkOut + rcDeskStay) / rcCycleDur;
+  rcDeskKeyTimesArr.push(tIn.toFixed(5));
+  rcDeskColorsArr.push(rcSeats[rcSpeakerSeats[k]].party);
+  rcDeskKeyTimesArr.push(tOut.toFixed(5));
+  rcDeskColorsArr.push(rcDeskNeutral);
+}
+rcDeskKeyTimesArr.push('1');
+rcDeskColorsArr.push(rcDeskNeutral);
+const rcDeskKeyTimes = rcDeskKeyTimesArr.join(';');
+const rcDeskColors = rcDeskColorsArr.join(';');
+
+// ── Newsfeed (spinning globe + ticker) ──────────────────────────────
+// Deterministic news items spanning 2010-01–2024-07. Each item has a
+// source agency, date, place, and headline. Mixed categories: elections,
+// financial, extreme weather, sports, cultural events.
+
+type NewsItem = { source: string; date: string; place: string; headline: string; theme: string };
+
+// Theme colours — each source belongs to a category; the dot on the globe
+// and the source label in the ticker share the same colour.
+const nfThemeColors: Record<string, string> = {
+  news:     '#0e1d28', // dark ink — wire agencies (Reuters, AP, AFP)
+  finance:  '#2c5d8a', // blue — financial (Bloomberg, Fed, ECB, BoE, IMF, World Bank, OECD)
+  weather:  '#b8401f', // red — meteorological / climate (NOAA, ECMWF, WMO, Met Office, DWD, IPCC)
+  media:    '#6b3fa0', // purple — broadcast (BBC)
+  health:   '#0a8a7a', // teal — health / intl orgs (WHO, UN)
+  sports:   '#c9722b', // amber — sports
+  culture:  '#8b3a4f', // wine — cultural / awards
+};
+const nfThemeLabels: Record<string, string> = {
+  news:     'NEWS',
+  finance:  'FINANCE',
+  weather:  'WEATHER',
+  media:    'MEDIA',
+  health:   'HEALTH',
+  sports:   'SPORTS',
+  culture:  'CULTURE',
+};
+const nfSourceTheme: Record<string, string> = {
+  'REUTERS': 'news', 'AP': 'news', 'AFP': 'news',
+  'BLOOMBERG': 'finance', 'FEDERAL RESERVE': 'finance', 'ECB': 'finance',
+  'BANK OF ENGLAND': 'finance', 'IMF': 'finance', 'WORLD BANK': 'finance', 'OECD': 'finance',
+  'NOAA': 'weather', 'ECMWF': 'weather', 'WMO': 'weather', 'MET OFFICE': 'weather',
+  'DWD': 'weather', 'IPCC': 'weather',
+  'BBC': 'media',
+  'WHO': 'health', 'UN': 'health',
+};
+const nfSourceColor = (src: string) => nfThemeColors[nfSourceTheme[src] || 'news'] || nfThemeColors.news;
+
+const nfItems: NewsItem[] = [
+  { source: 'REUTERS',         date: '2010-05-06', place: 'London, UK',            headline: 'Hung parliament: no party wins outright majority in UK general election', theme: 'news' },
+  { source: 'BLOOMBERG',       date: '2010-05-06', place: 'New York, NY',           headline: 'Flash crash wipes nearly 1,000 points off Dow in minutes', theme: 'finance' },
+  { source: 'NOAA',            date: '2010-08-14', place: 'Indus Basin, Pakistan',  headline: 'Unprecedented monsoon flooding displaces 20 million across Pakistan', theme: 'weather' },
+  { source: 'AFP',             date: '2010-07-11', place: 'Johannesburg, ZA',       headline: 'Spain lifts first FIFA World Cup title after 1-0 extra-time win', theme: 'sports' },
+  { source: 'AP',              date: '2011-03-11', place: 'Tōhoku, Japan',          headline: '9.1-magnitude earthquake triggers tsunami and Fukushima nuclear crisis', theme: 'weather' },
+  { source: 'ECB',             date: '2011-11-03', place: 'Frankfurt, DE',          headline: 'ECB cuts rates as eurozone debt crisis spreads to Italy and Spain', theme: 'finance' },
+  { source: 'BBC',             date: '2012-07-27', place: 'London, UK',             headline: 'London 2012 Olympic Games open with Danny Boyle ceremony', theme: 'sports' },
+  { source: 'IPCC',            date: '2012-11-18', place: 'Doha, Qatar',            headline: 'IPCC special report: extreme weather events increasing in frequency', theme: 'weather' },
+  { source: 'IMF',             date: '2012-06-29', place: 'Brussels, BE',           headline: 'Euro-area leaders agree to ESM direct bank recapitalisation', theme: 'finance' },
+  { source: 'REUTERS',         date: '2013-09-10', place: 'Stockholm, SE',          headline: 'Nobel committee awards physics prize for Higgs boson prediction', theme: 'culture' },
+  { source: 'FEDERAL RESERVE', date: '2013-05-22', place: 'Washington, DC',         headline: 'Bernanke hints at tapering QE; bond yields spike in "taper tantrum"', theme: 'finance' },
+  { source: 'WMO',             date: '2013-11-08', place: 'Tacloban, Philippines',  headline: 'Super Typhoon Haiyan makes landfall with 315 km/h winds', theme: 'weather' },
+  { source: 'AP',              date: '2014-07-13', place: 'Rio de Janeiro, BR',     headline: 'Germany routs Brazil 7-1 in World Cup semi-final at Maracanã', theme: 'sports' },
+  { source: 'WORLD BANK',      date: '2014-10-08', place: 'Washington, DC',         headline: 'World Bank warns of rising inequality dampening growth prospects', theme: 'finance' },
+  { source: 'BBC',             date: '2015-12-12', place: 'Paris, FR',              headline: '195 nations adopt Paris Agreement on climate change', theme: 'weather' },
+  { source: 'BLOOMBERG',       date: '2015-08-24', place: 'Shanghai, CN',           headline: 'Chinese stock market crash triggers global "Black Monday" sell-off', theme: 'finance' },
+  { source: 'ECMWF',           date: '2015-12-30', place: 'North Atlantic',         headline: 'Storm Frank pushes UK winter flooding; December warmest on record', theme: 'weather' },
+  { source: 'AFP',             date: '2016-08-21', place: 'Rio de Janeiro, BR',     headline: 'Rio 2016 Olympics close; Usain Bolt completes "triple-triple"', theme: 'sports' },
+  { source: 'REUTERS',         date: '2016-06-24', place: 'London, UK',             headline: 'UK votes to leave EU; sterling plunges to 31-year low', theme: 'news' },
+  { source: 'OECD',            date: '2016-11-09', place: 'Paris, FR',              headline: 'OECD revises global forecasts after surprise US election result', theme: 'finance' },
+  { source: 'MET OFFICE',      date: '2017-09-06', place: 'Caribbean Sea',          headline: 'Hurricane Irma reaches Category 5 with 295 km/h sustained winds', theme: 'weather' },
+  { source: 'ECB',             date: '2017-10-26', place: 'Frankfurt, DE',          headline: 'ECB extends asset purchases but halves monthly pace to €30bn', theme: 'finance' },
+  { source: 'AP',              date: '2018-02-09', place: 'PyeongChang, KR',        headline: 'Winter Olympics open under unified Korean flag', theme: 'sports' },
+  { source: 'BLOOMBERG',       date: '2018-12-24', place: 'New York, NY',           headline: 'S&P 500 posts worst Christmas Eve decline since Great Depression', theme: 'finance' },
+  { source: 'BBC',             date: '2019-02-02', place: 'Twickenham, UK',         headline: 'Wales edge England 21-13 to clinch Six Nations Grand Slam', theme: 'sports' },
+  { source: 'NOAA',            date: '2019-07-25', place: 'Paris, FR',              headline: 'France shatters all-time heat record at 46.0°C during June heatwave', theme: 'weather' },
+  { source: 'WHO',             date: '2020-03-11', place: 'Geneva, CH',             headline: 'WHO declares COVID-19 a global pandemic', theme: 'health' },
+  { source: 'FEDERAL RESERVE', date: '2020-03-15', place: 'Washington, DC',         headline: 'Fed slashes rates to near zero; launches unlimited QE programme', theme: 'finance' },
+  { source: 'REUTERS',         date: '2021-07-23', place: 'Tokyo, JP',              headline: 'Tokyo 2020 Olympics open one year late before empty stands', theme: 'sports' },
+  { source: 'DWD',             date: '2021-07-14', place: 'Ahr Valley, DE',         headline: 'Record rainfall triggers catastrophic flooding across western Germany', theme: 'weather' },
+  { source: 'IPCC',            date: '2021-08-09', place: 'Geneva, CH',             headline: 'IPCC AR6: human influence on climate "unequivocal"', theme: 'weather' },
+  { source: 'IMF',             date: '2022-04-19', place: 'Washington, DC',         headline: 'IMF cuts global growth outlook amid war, inflation, and supply shocks', theme: 'finance' },
+  { source: 'AFP',             date: '2022-12-18', place: 'Lusail, QA',             headline: 'Argentina wins World Cup on penalties; Messi lifts trophy', theme: 'sports' },
+  { source: 'BANK OF ENGLAND', date: '2022-09-28', place: 'London, UK',             headline: 'Bank of England launches emergency gilt purchases after mini-budget turmoil', theme: 'finance' },
+  { source: 'ECMWF',           date: '2023-07-06', place: 'Global',                 headline: 'July 4 confirmed as hottest day in recorded history', theme: 'weather' },
+  { source: 'REUTERS',         date: '2023-10-05', place: 'Stockholm, SE',          headline: 'Nobel Prize in Economics awarded for research on gender labour gaps', theme: 'culture' },
+  { source: 'BLOOMBERG',       date: '2024-01-02', place: 'New York, NY',           headline: 'S&P 500 closes at all-time high, capping 24% annual rally', theme: 'finance' },
+  { source: 'WMO',             date: '2024-03-19', place: 'Geneva, CH',             headline: 'WMO confirms 2023 as warmest year on record by large margin', theme: 'weather' },
+  { source: 'BBC',             date: '2024-07-26', place: 'Paris, FR',              headline: 'Paris 2024 Olympics open with Seine river ceremony', theme: 'sports' },
+  { source: 'AP',              date: '2024-06-09', place: 'Brussels, BE',           headline: 'European Parliament elections see record turnout amid far-right gains', theme: 'news' },
+];
+
+// Globe dots — one per news item, coloured by theme. Each dot lights up
+// briefly while its headline scrolls through the ticker.
+// 4 loops of 10 dots each, staggered so they illuminate in sequence.
+const nfGlobeR = 40;
+const nfGlobeCx = 45;
+const nfGlobeCy = 45;
+
+// Lat/lon for each news item's place (same order as nfItems).
+const nfPlaces: { lat: number; lon: number }[] = [
+  { lat: 51.5, lon: -0.1 },   // London
+  { lat: 40.7, lon: -74.0 },  // New York
+  { lat: 30.0, lon: 70.0 },   // Pakistan
+  { lat: -26.2, lon: 28.0 },  // Johannesburg
+  { lat: 38.3, lon: 140.9 },  // Tohoku
+  { lat: 50.1, lon: 8.7 },    // Frankfurt
+  { lat: 51.5, lon: -0.1 },   // London (Olympics)
+  { lat: 25.3, lon: 51.5 },   // Doha
+  { lat: 50.8, lon: 4.4 },    // Brussels
+  { lat: 59.3, lon: 18.1 },   // Stockholm
+  { lat: 38.9, lon: -77.0 },  // Washington
+  { lat: 11.3, lon: 125.0 },  // Tacloban
+  { lat: -22.9, lon: -43.2 }, // Rio
+  { lat: 38.9, lon: -77.0 },  // Washington
+  { lat: 48.9, lon: 2.3 },    // Paris
+  { lat: 31.2, lon: 121.5 },  // Shanghai
+  { lat: 55.0, lon: -3.0 },   // North Atlantic / UK
+  { lat: -22.9, lon: -43.2 }, // Rio
+  { lat: 51.5, lon: -0.1 },   // London (Brexit)
+  { lat: 48.9, lon: 2.3 },    // Paris
+  { lat: 18.0, lon: -65.0 },  // Caribbean
+  { lat: 50.1, lon: 8.7 },    // Frankfurt
+  { lat: 37.6, lon: 127.0 },  // PyeongChang
+  { lat: 40.7, lon: -74.0 },  // New York
+  { lat: 51.5, lon: -0.1 },   // Twickenham
+  { lat: 48.9, lon: 2.3 },    // Paris
+  { lat: 46.2, lon: 6.1 },    // Geneva
+  { lat: 38.9, lon: -77.0 },  // Washington
+  { lat: 35.7, lon: 139.7 },  // Tokyo
+  { lat: 50.3, lon: 7.0 },    // Ahr Valley
+  { lat: 46.2, lon: 6.1 },    // Geneva
+  { lat: 38.9, lon: -77.0 },  // Washington
+  { lat: 25.4, lon: 51.4 },   // Lusail
+  { lat: 51.5, lon: -0.1 },   // London
+  { lat: 46.2, lon: 6.1 },    // Geneva (ECMWF global)
+  { lat: 59.3, lon: 18.1 },   // Stockholm
+  { lat: 40.7, lon: -74.0 },  // New York
+  { lat: 46.2, lon: 6.1 },    // Geneva
+  { lat: 48.9, lon: 2.3 },    // Paris
+  { lat: 50.8, lon: 4.4 },    // Brussels
+];
+
+// Dots are driven by client-side JS so they can rotate with the globe,
+// disappear behind the horizon, and spawn expanding soundwave rings.
+const nfTickerDur = 180; // slower: each of 40 items appears every ~4.5s
+const nfDotData = nfPlaces.map((d, i) => ({
+  lat: (d.lat / 180) * Math.PI,
+  lon: (d.lon / 180) * Math.PI,
+  color: nfThemeColors[nfItems[i]?.theme || 'news'] || nfThemeColors.news,
+}));
+const nfDotDataJSON = JSON.stringify(nfDotData);
+
+// ── Globe wireframe geometry ──────────────────────────────────────
+// Meridians are rendered as cubic Bezier paths whose control points
+// shift from left to right, producing the correct curvature change
+// for a Y-axis (left-to-right) spin in orthographic projection:
+//   • left edge  → path curves leftward  (matching globe outline)
+//   • centre     → straight vertical line
+//   • right edge → path curves rightward (matching globe outline)
+// Each meridian is visible during the front-hemisphere pass (0-50%
+// of its cycle) and hidden during the back pass (50-100%).
+const nfSpinDur = 30; // seconds for one full rotation (matched to slower ticker)
+const nfMeridianCount = 8;
+const nfGTop = nfGlobeCy - nfGlobeR + 1; // 6
+const nfGBot = nfGlobeCy + nfGlobeR - 1; // 84
+// Three key path states (cubic Bézier: M start C cp1 cp2 end)
+const nfPathL = `M ${nfGlobeCx} ${nfGTop} C ${nfGlobeCx - nfGlobeR} ${nfGTop} ${nfGlobeCx - nfGlobeR} ${nfGBot} ${nfGlobeCx} ${nfGBot}`;
+const nfPathC = `M ${nfGlobeCx} ${nfGTop} C ${nfGlobeCx} ${nfGTop} ${nfGlobeCx} ${nfGBot} ${nfGlobeCx} ${nfGBot}`;
+const nfPathR = `M ${nfGlobeCx} ${nfGTop} C ${nfGlobeCx + nfGlobeR} ${nfGTop} ${nfGlobeCx + nfGlobeR} ${nfGBot} ${nfGlobeCx} ${nfGBot}`;
+// Parallels: proper half-ellipse rx at each latitude offset
+const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
+  const rxP = Math.sqrt(Math.max(0, nfGlobeR * nfGlobeR - off * off));
+  // foreshortened ry gives 3D tilt perspective
+  const ryP = Math.max(0.6, rxP * 0.08);
+  return { cy: nfGlobeCy + off, rx: rxP, ry: ryP, isEquator: off === 0 };
+});
+---
+
+<aside class={`section-divider section-divider--${variant}`} aria-hidden="true">
+  <div class="container section-divider__inner">
+    <div class="section-divider__viz">
+      {variant === 'heatwave' && (
+        <div class="sd-heatwave__strip warming-stripes">
+          {Array.from({ length: 40 }).map(() => <i></i>)}
+        </div>
+      )}
+
+      {variant === 'dispatch' && (
+        <div class="sd-dispatch__tape">
+          <span>{dispatchTapeLong}</span>
+        </div>
+      )}
+
+      {variant === 'contour' && (
+        <div class="sd-contour" style={`--contour-cycle:${contourCycleDur}s; --contour-draw-stop:${contourDrawStop}%; --contour-hold-stop:${contourHoldStop}%`}>
+          <div class="sd-contour__chart">
+            <div class="sd-contour__yaxis-wrap" aria-hidden="true">
+              <span class="sd-contour__yaxis-label">ENGAGEMENT</span>
+              <ul class="sd-contour__yaxis">
+                <li>100%</li>
+                <li>50%</li>
+                <li>0%</li>
+              </ul>
+            </div>
+            <div class="sd-contour__plot">
+              <svg viewBox={`0 0 ${cW} ${cH}`} preserveAspectRatio="none">
+                <g class="sd-contour__grid">
+                  <line x1="0" y1="0"   x2={cW} y2="0"   />
+                  <line x1="0" y1="50"  x2={cW} y2="50"  />
+                  <line x1="0" y1="100" x2={cW} y2="100" />
+                </g>
+                {contourPatterns.map((lines, p) => (
+                  <g class="sd-contour__pattern" style={`animation-delay:${p * contourPatternDur}s`}>
+                    {lines.map((line) => (
+                      <path
+                        d={line.d}
+                        stroke={contourCountries[line.countryIdx].color}
+                        class={`sd-contour__path${line.thin ? ' sd-contour__path--thin' : ''}`}
+                        style={`animation-delay:${p * contourPatternDur}s`}
+                      />
+                    ))}
+                  </g>
+                ))}
+              </svg>
+            </div>
+          </div>
+          <div class="sd-contour__footer">
+            <ul class="sd-contour__legend" aria-hidden="true">
+              {contourCountries.map((c) => (
+                <li>
+                  <svg class="sd-contour__swatch" viewBox="0 0 22 4" xmlns="http://www.w3.org/2000/svg">
+                    <line x1="0" y1="2" x2="22" y2="2"
+                      stroke={c.color}
+                      stroke-width={c.thin ? '1.2' : '3'}
+                      stroke-dasharray="none" />
+                  </svg>
+                  <span class="sd-contour__code">{c.code}</span>
+                </li>
+              ))}
+            </ul>
+            <span class="sd-contour__time" aria-hidden="true">TIME</span>
+          </div>
+        </div>
+      )}
+
+      {variant === 'policy' && (
+        <div class="sd-policy" style={`--policy-dur: ${policyDur}s`}>
+          <div class="sd-policy__ylabel">
+            <span>CO₂ EMISSIONS</span>
+          </div>
+          <div class="sd-policy__viewport">
+            <div class="sd-policy__scroll">
+              {[0, 1].map(() => (
+                <div class="sd-policy__segment" style={`width: ${policyTotalW}px`}>
+                  <svg viewBox={`0 0 ${policyTotalW} ${policyChartH}`} preserveAspectRatio="none">
+                    {/* vertical bands at legislation events */}
+                    {policyEvents.map((evt) => (
+                      <rect
+                        x={evt.x - policyBandW / 2}
+                        y={0}
+                        width={policyBandW}
+                        height={policyChartH}
+                        fill={evt.color}
+                        class="sd-policy__band"
+                      />
+                    ))}
+                    {/* baseline */}
+                    <line x1="0" y1={policyChartH / 2} x2={policyTotalW} y2={policyChartH / 2}
+                          class="sd-policy__baseline" />
+                    {/* erratic CO₂ line */}
+                    <path d={policyLinePath} class="sd-policy__line" />
+                  </svg>
+                </div>
+              ))}
+            </div>
+          </div>
+          <span class="sd-policy__time" aria-hidden="true">TIME</span>
+          <div class="sd-policy__vlegend">
+            <span class="sd-policy__vlegend-title">CLIMATE<br/>POLICY</span>
+            <span class="sd-policy__vlegend-label">Strong</span>
+            <div class="sd-policy__vlegend-bar"></div>
+            <span class="sd-policy__vlegend-label">Weak</span>
+          </div>
+        </div>
+      )}
+
+      {variant === 'voice' && (
+        <div class="sd-voice__plot">
+          <svg viewBox={`0 0 ${voiceTotalW} ${voiceTotalH}`} preserveAspectRatio="none">
+            <g class="sd-voice__scroller">
+              {speakerA.map((h, i) => {
+                const barH = h * voiceTrackH;
+                return (
+                  <rect
+                    class="sd-voice__bar sd-voice__bar--a"
+                    x={i * (voiceBarW + voiceBarGap)}
+                    y={voiceMid - barH}
+                    width={voiceBarW}
+                    height={barH}
+                    rx="0.6"
+                  />
+                );
+              })}
+              {speakerB.map((h, i) => {
+                const barH = h * voiceTrackH;
+                return (
+                  <rect
+                    class="sd-voice__bar sd-voice__bar--b"
+                    x={i * (voiceBarW + voiceBarGap)}
+                    y={voiceMid}
+                    width={voiceBarW}
+                    height={barH}
+                    rx="0.6"
+                  />
+                );
+              })}
+              <g transform={`translate(${voiceTotalW}, 0)`}>
+                {speakerA.map((h, i) => {
+                  const barH = h * voiceTrackH;
+                  return (
+                    <rect
+                      class="sd-voice__bar sd-voice__bar--a"
+                      x={i * (voiceBarW + voiceBarGap)}
+                      y={voiceMid - barH}
+                      width={voiceBarW}
+                      height={barH}
+                      rx="0.6"
+                    />
+                  );
+                })}
+                {speakerB.map((h, i) => {
+                  const barH = h * voiceTrackH;
+                  return (
+                    <rect
+                      class="sd-voice__bar sd-voice__bar--b"
+                      x={i * (voiceBarW + voiceBarGap)}
+                      y={voiceMid}
+                      width={voiceBarW}
+                      height={barH}
+                      rx="0.6"
+                    />
+                  );
+                })}
+              </g>
+              <line
+                x1="0"
+                y1={voiceMid}
+                x2={voiceTotalW * 2}
+                y2={voiceMid}
+                class="sd-voice__baseline"
+              />
+            </g>
+          </svg>
+        </div>
+      )}
+
+      {variant === 'network' && (
+        <div class="sd-network-full"
+             data-globe-dots={netGlobeDotsJSON}
+             data-glyph-data={netGlyphDataJSON}
+             data-spin={nfSpinDur}
+             data-r={nfGlobeR}
+             data-cx={nfGlobeCx}
+             data-cy={nfGlobeCy}>
+          {/* Globe — same wireframe as newsfeed */}
+          <div class="sd-network-full__globe">
+            <svg viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <clipPath id="netGlobeClip">
+                  <circle cx={nfGlobeCx} cy={nfGlobeCy} r={nfGlobeR - 0.5} />
+                </clipPath>
+                <radialGradient id="netGlobeShade" cx="38%" cy="34%" r="52%">
+                  <stop offset="0%" stop-color="white" stop-opacity="0.07" />
+                  <stop offset="70%" stop-color="white" stop-opacity="0" />
+                  <stop offset="100%" stop-color="black" stop-opacity="0.05" />
+                </radialGradient>
+              </defs>
+              <circle cx={nfGlobeCx} cy={nfGlobeCy} r={nfGlobeR} fill="url(#netGlobeShade)" stroke="var(--c-ink-soft)" stroke-width="1.1" />
+              <g clip-path="url(#netGlobeClip)">
+                {nfParallels.map((p) => (
+                  <ellipse cx={nfGlobeCx} cy={p.cy} rx={p.rx} ry={p.ry} fill="none"
+                    stroke={p.isEquator ? 'var(--c-ink-muted)' : 'var(--c-line-strong)'}
+                    stroke-width={p.isEquator ? 0.6 : 0.35}
+                    stroke-dasharray={p.isEquator ? '3 2' : '1.5 2.5'}
+                    opacity={p.isEquator ? 0.7 : 0.45} />
+                ))}
+              </g>
+              <g clip-path="url(#netGlobeClip)">
+                {Array.from({ length: nfMeridianCount }, (_, m) => {
+                  const phase = -(m * (nfSpinDur / nfMeridianCount));
+                  return (
+                    <path d={nfPathL} fill="none" stroke="var(--c-ink-muted)" stroke-width="0.45" opacity="0">
+                      <animate attributeName="d" values={`${nfPathL};${nfPathC};${nfPathR};${nfPathL}`}
+                        keyTimes="0;0.25;0.5;1" dur={`${nfSpinDur}s`} begin={`${phase}s`} repeatCount="indefinite" />
+                      <animate attributeName="opacity" values="0.5;0.55;0.5;0;0;0.5"
+                        keyTimes="0;0.25;0.48;0.5;0.97;1" dur={`${nfSpinDur}s`} begin={`${phase}s`} repeatCount="indefinite" />
+                    </path>
+                  );
+                })}
+              </g>
+              {/* JS-driven dots */}
+              <g clip-path="url(#netGlobeClip)" class="sd-netglobe__dots-layer">
+                {netGlobeDots.map((_, i) => (
+                  <Fragment>
+                    <circle class="sd-netglobe-dot"  data-i={i} r="3.2" opacity="0" />
+                  </Fragment>
+                ))}
+              </g>
+            </svg>
+          </div>
+
+          {/* Network graph */}
+          <div class="sd-network__plot sd-network__plot--inset">
+            <svg viewBox={`0 0 ${netW} ${netH}`} preserveAspectRatio="none">
+              {netEdges.map((e, i) => (
+                <line x1={netNodes[e.a].x} y1={netNodes[e.a].y}
+                      x2={netNodes[e.b].x} y2={netNodes[e.b].y}
+                      class="sd-network__edge"
+                      style={`animation-delay: ${(i % 19) * 0.17}s`} />
+              ))}
+              {netNodes.map((n, i) => (
+                <circle cx={n.x} cy={n.y} r={n.r}
+                  class={`sd-network__node ${n.isHub ? 'sd-network__node--hub' : ''}`}
+                  style={`animation-delay: ${(i % 13) * 0.23}s`} />
+              ))}
+            </svg>
+            <div class="sd-network__glyphs" aria-hidden="true">
+              {netGlyphs.map((g, i) => (
+                <span
+                  class={`sd-network__glyph sd-network__glyph--${g.kind}`}
+                  data-gi={i}
+                  style={`left: ${g.leftPct}%; top: ${g.topPct}%`}
+                >{g.kind === 'heart' ? '❤️' : g.kind === 'haha' ? '😂' : g.kind === 'wow' ? '😮' : g.kind === 'sad' ? '😢' : g.kind === 'angry' ? '😡' : ''}</span>
+              ))}
+            </div>
+          </div>
+
+          {/* Cross-element wave overlay — spans both globe and network */}
+          <div class="sd-network__wave-overlay" aria-hidden="true"></div>
+        </div>
+      )}
+
+      {variant === 'newsfeed' && (
+        <div class="sd-newsfeed"
+             style={`--nf-dur: ${nfTickerDur}s`}>
+          <div class="sd-newsfeed__globe"
+               data-dots={nfDotDataJSON}
+               data-spin={nfSpinDur}
+               data-ticker={nfTickerDur}
+               data-r={nfGlobeR}
+               data-cx={nfGlobeCx}
+               data-cy={nfGlobeCy}>
+            <svg viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <clipPath id="nfGlobeClip">
+                  <circle cx={nfGlobeCx} cy={nfGlobeCy} r={nfGlobeR - 0.5} />
+                </clipPath>
+                <radialGradient id="nfGlobeShade" cx="38%" cy="34%" r="52%">
+                  <stop offset="0%" stop-color="white" stop-opacity="0.07" />
+                  <stop offset="70%" stop-color="white" stop-opacity="0" />
+                  <stop offset="100%" stop-color="black" stop-opacity="0.05" />
+                </radialGradient>
+              </defs>
+
+              {/* Globe fill — 3D shading */}
+              <circle cx={nfGlobeCx} cy={nfGlobeCy} r={nfGlobeR} fill="url(#nfGlobeShade)" stroke="var(--c-ink-soft)" stroke-width="1.1" />
+
+              {/* Parallels */}
+              <g clip-path="url(#nfGlobeClip)">
+                {nfParallels.map((p) => (
+                  <ellipse
+                    cx={nfGlobeCx}
+                    cy={p.cy}
+                    rx={p.rx}
+                    ry={p.ry}
+                    fill="none"
+                    stroke={p.isEquator ? 'var(--c-ink-muted)' : 'var(--c-line-strong)'}
+                    stroke-width={p.isEquator ? 0.6 : 0.35}
+                    stroke-dasharray={p.isEquator ? '3 2' : '1.5 2.5'}
+                    opacity={p.isEquator ? 0.7 : 0.45}
+                  />
+                ))}
+              </g>
+
+              {/* Meridians — cubic Bézier, SMIL-driven */}
+              <g clip-path="url(#nfGlobeClip)">
+                {Array.from({ length: nfMeridianCount }, (_, m) => {
+                  const phase = -(m * (nfSpinDur / nfMeridianCount));
+                  return (
+                    <path
+                      d={nfPathL}
+                      fill="none"
+                      stroke="var(--c-ink-muted)"
+                      stroke-width="0.45"
+                      opacity="0"
+                    >
+                      <animate
+                        attributeName="d"
+                        values={`${nfPathL};${nfPathC};${nfPathR};${nfPathL}`}
+                        keyTimes="0;0.25;0.5;1"
+                        dur={`${nfSpinDur}s`}
+                        begin={`${phase}s`}
+                        repeatCount="indefinite"
+                      />
+                      <animate
+                        attributeName="opacity"
+                        values="0.5;0.55;0.5;0;0;0.5"
+                        keyTimes="0;0.25;0.48;0.5;0.97;1"
+                        dur={`${nfSpinDur}s`}
+                        begin={`${phase}s`}
+                        repeatCount="indefinite"
+                      />
+                    </path>
+                  );
+                })}
+              </g>
+
+              {/* JS-driven dots — clipped to globe */}
+              <g clip-path="url(#nfGlobeClip)" class="sd-newsfeed__dots-layer">
+                {nfDotData.map((_, i) => (
+                  <Fragment>
+                    <circle class="sd-nf-dot" data-i={i} r="3.2" opacity="0" />
+                  </Fragment>
+                ))}
+              </g>
+            </svg>
+          </div>
+
+          {/* Content area: news ticker */}
+          <div class="sd-newsfeed__content">
+            <div class="sd-newsfeed__ticker">
+              {nfItems.map((item) => (
+                <div class="sd-newsfeed__item">
+                  <span class="sd-newsfeed__source" style={`color: ${nfThemeColors[item.theme] || nfThemeColors.news}`}>{nfThemeLabels[item.theme] || 'NEWS'} — {item.source}</span>
+                  <span class="sd-newsfeed__headline">{item.headline}</span>
+                  <span class="sd-newsfeed__meta">{item.date} · {item.place}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Wave overlay — spans both globe and content area */}
+          <div class="sd-newsfeed__wave-overlay" aria-hidden="true"></div>
+        </div>
+      )}
+
+      {variant === 'rollcall' && (
+        <div class="sd-rollcall__plot">
+          <svg viewBox={`0 0 ${rcW} ${rcH}`} preserveAspectRatio="none">
+            {/* Static seats with discrete fill animations driven by the
+                speaker cycle. Seats reserved for speakers are skipped — the
+                MP circles below render those positions instead. */}
+            {rcSeats.map((seat, i) => {
+              if (rcSpeakerSet.has(i)) return null;
+              const timeline = rcSeatTimelines[i];
+              const allSame = timeline.every((c) => c === timeline[0]);
+              return (
+                <circle
+                  cx={seat.x}
+                  cy={seat.y}
+                  r={seat.r}
+                  fill={timeline[0]}
+                  class="sd-rollcall__seat"
+                >
+                  {!allSame && (
+                    <animate
+                      attributeName="fill"
+                      values={timeline.join(';')}
+                      keyTimes={rcColorKeyTimes}
+                      dur={`${rcCycleDur}s`}
+                      repeatCount="indefinite"
+                      calcMode="discrete"
+                    />
+                  )}
+                </circle>
+              );
+            })}
+
+            {/* Hemicyclic soundwaves — half-ellipses that grow upward from
+                the whole desk into the chamber. Three per speaker. */}
+            {rcSpeakers.flatMap((sp) =>
+              waveOffsetsSec.map((off) => {
+                const burstStart = ((off) / rcCycleDur).toFixed(5);
+                const burstMid   = ((off + waveDurSec * 0.5) / rcCycleDur).toFixed(5);
+                const burstEnd   = ((off + waveDurSec) / rcCycleDur).toFixed(5);
+                return (
+                  <ellipse
+                    cx={rcDeskX}
+                    cy={rcDeskY}
+                    rx={rcDeskHalfW}
+                    ry={rcDeskHalfH}
+                    fill="none"
+                    stroke={sp.seat.party}
+                    stroke-width="1.1"
+                    opacity="0"
+                    class="sd-rollcall__wave"
+                  >
+                    <animate
+                      attributeName="rx"
+                      values={`${rcDeskHalfW};${rcDeskHalfW};${rcW * 0.65};${rcW * 0.65}`}
+                      keyTimes={`0;${burstStart};${burstEnd};1`}
+                      dur={`${rcCycleDur}s`}
+                      repeatCount="indefinite"
+                      begin={`${sp.begin}s`}
+                    />
+                    <animate
+                      attributeName="ry"
+                      values={`${rcDeskHalfH};${rcDeskHalfH};${rcH * 1.3};${rcH * 1.3}`}
+                      keyTimes={`0;${burstStart};${burstEnd};1`}
+                      dur={`${rcCycleDur}s`}
+                      repeatCount="indefinite"
+                      begin={`${sp.begin}s`}
+                    />
+                    <animate
+                      attributeName="opacity"
+                      values={`0;0.85;0.55;0;0`}
+                      keyTimes={`0;${burstStart};${burstMid};${burstEnd};1`}
+                      dur={`${rcCycleDur}s`}
+                      repeatCount="indefinite"
+                      begin={`${sp.begin}s`}
+                    />
+                  </ellipse>
+                );
+              })
+            )}
+
+            {/* Desk — 3× thicker than before. Its fill animates to take on
+                the active speaker's party colour while they stand behind it. */}
+            <rect
+              x={rcDeskX - rcDeskHalfW}
+              y={rcDeskY - rcDeskHalfH}
+              width={rcDeskHalfW * 2}
+              height={rcDeskHalfH * 2}
+              fill={rcDeskNeutral}
+              class="sd-rollcall__desk"
+            >
+              <animate
+                attributeName="fill"
+                values={rcDeskColors}
+                keyTimes={rcDeskKeyTimes}
+                dur={`${rcCycleDur}s`}
+                repeatCount="indefinite"
+                calcMode="discrete"
+              />
+            </rect>
+
+            {/* The speaker MPs: each walks from its seat to the middle of
+                the desk (slightly behind) and back, sequentially. */}
+            {rcSpeakers.map((sp) => {
+              const sx = sp.seat.x;
+              const sy = sp.seat.y;
+              const dx = sp.dx;
+              const dy = sp.dy;
+              const party = sp.seat.party;
+              return (
+                <circle
+                  cx={sx}
+                  cy={sy}
+                  r={sp.seat.r * 1.25}
+                  fill={party}
+                  class="sd-rollcall__mp"
+                >
+                  <animate
+                    attributeName="cx"
+                    values={`${sx};${dx};${dx};${sx};${sx}`}
+                    keyTimes={mpKeyTimes}
+                    dur={`${rcCycleDur}s`}
+                    repeatCount="indefinite"
+                    begin={`${sp.begin}s`}
+                  />
+                  <animate
+                    attributeName="cy"
+                    values={`${sy};${dy};${dy};${sy};${sy}`}
+                    keyTimes={mpKeyTimes}
+                    dur={`${rcCycleDur}s`}
+                    repeatCount="indefinite"
+                    begin={`${sp.begin}s`}
+                  />
+                </circle>
+              );
+            })}
+          </svg>
+        </div>
+      )}
+    </div>
+
+    {caption && <p class="section-divider__caption">{caption}</p>}
+  </div>
+</aside>
+
+<script>
+  // ── Newsfeed: dot → cross-container wave → news reveal
+  const nfContainer = document.querySelector<HTMLElement>('.sd-newsfeed');
+  const nfGlobe = nfContainer?.querySelector<HTMLElement>('.sd-newsfeed__globe');
+  if (nfContainer && nfGlobe) {
+    const dots: { lat: number; lon: number; color: string }[] =
+      JSON.parse(nfGlobe.dataset.dots || '[]');
+    const spinDur = parseFloat(nfGlobe.dataset.spin || '30');
+    const R  = parseFloat(nfGlobe.dataset.r  || '40');
+    const cx = parseFloat(nfGlobe.dataset.cx || '45');
+    const cy = parseFloat(nfGlobe.dataset.cy || '45');
+
+    const dotEls   = nfGlobe.querySelectorAll<SVGCircleElement>('.sd-nf-dot');
+    const overlay  = nfContainer.querySelector<HTMLElement>('.sd-newsfeed__wave-overlay');
+    const contentEl = nfContainer.querySelector<HTMLElement>('.sd-newsfeed__content');
+    const count    = dots.length;
+
+    // ── Timing ──
+    const waveCrossDur = 9.0;    // seconds for wave to cross full container
+    const dotPulseSec  = 2.5;
+    const revealSec    = 3.0;
+    const holdSec      = 3.0;
+    const fadeSec      = 0.8;
+    const gapSec       = 0;
+    const newsDur      = revealSec + holdSec + fadeSec; // 6.8s
+    const dotInterval  = newsDur + gapSec;              // 6.8s
+
+    // ── Ticker items ──
+    const tickerEl = nfContainer.querySelector<HTMLElement>('.sd-newsfeed__ticker');
+    const items = tickerEl
+      ? Array.from(tickerEl.querySelectorAll<HTMLElement>('.sd-newsfeed__item')).slice(0, count)
+      : [];
+
+    // ── Geometry (re-measured on resize) ──
+    const svgEl = nfGlobe.querySelector('svg');
+    let cW = 1120, svgScale = 50 / 90, svgOffX = 15, svgOffY = 3;
+    let contentLeft = 80, contentW = 1040, cH = 56;
+    function measureLayout() {
+      if (!svgEl) return;
+      const sr = svgEl.getBoundingClientRect();
+      const cr = nfContainer!.getBoundingClientRect();
+      cW = cr.width;
+      cH = cr.height;
+      svgScale = sr.width / 90;
+      svgOffX  = sr.left - cr.left;
+      svgOffY  = sr.top  - cr.top;
+      if (contentEl) {
+        const ce = contentEl.getBoundingClientRect();
+        contentLeft = ce.left - cr.left;
+        contentW    = ce.width;
+      }
+    }
+    measureLayout();
+    window.addEventListener('resize', measureLayout);
+
+    // ── Event queue ──
+    interface Evt {
+      idx: number;
+      fire: number;
+      screenX: number;
+      screenY: number;
+      front: boolean;
+      color: string;
+      ring: HTMLDivElement | null;
+      newsTriggered: boolean;
+    }
+    const queue: Evt[] = [];
+    let nextIdx  = 0;
+    let nextFire = performance.now() / 1000;
+
+    const reducedMotion =
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (!reducedMotion) {
+      (function tick() {
+        const t = performance.now() / 1000;
+        const spinAngle = (t / spinDur) * Math.PI * 2;
+
+        // ── Fire next dot? ──
+        if (t >= nextFire) {
+          // Find the next dot on the front hemisphere (scan up to all dots)
+          let chosen = -1;
+          for (let attempt = 0; attempt < count; attempt++) {
+            const ci = (nextIdx + attempt) % count;
+            const d  = dots[ci];
+            const lon = d.lon + spinAngle;
+            if (Math.cos(lon) > 0) { chosen = ci; break; }
+          }
+
+          if (chosen < 0) {
+            // All dots on back — rare, retry shortly
+            nextFire = t + 0.15;
+          } else {
+            const d   = dots[chosen];
+            const lon = d.lon + spinAngle;
+            const svgX = cx + R * 0.82 * Math.cos(d.lat) * Math.sin(lon);
+            const svgY = cy - R * 0.82 * Math.sin(d.lat);
+            const screenX = svgOffX + svgX * svgScale;
+            const screenY = svgOffY + svgY * svgScale;
+
+            // Create cross-container wave ring
+            let ring: HTMLDivElement | null = null;
+            if (overlay) {
+              ring = document.createElement('div');
+              ring.className = 'sd-nf-cross-ring';
+              ring.style.left = `${screenX}px`;
+              ring.style.top  = `${screenY}px`;
+              ring.style.borderColor = d.color;
+              overlay.appendChild(ring);
+            }
+
+            queue.push({
+              idx: chosen, fire: t,
+              screenX, screenY,
+              front: true, color: d.color, ring,
+              newsTriggered: false,
+            });
+            nextIdx  = (chosen + 1) % count;
+            nextFire = t + dotInterval;
+          }
+        }
+
+        // ── Position all dots (reset opacity first) ──
+        for (let i = 0; i < count; i++) {
+          const d   = dots[i];
+          const lon = d.lon + spinAngle;
+          const xi  = cx + R * 0.82 * Math.cos(d.lat) * Math.sin(lon);
+          const yi  = cy - R * 0.82 * Math.sin(d.lat);
+          const el  = dotEls[i];
+          if (el) {
+            el.setAttribute('cx', xi.toFixed(1));
+            el.setAttribute('cy', yi.toFixed(1));
+            el.setAttribute('opacity', '0');
+          }
+        }
+
+        // ── Process active events ──
+        for (let q = queue.length - 1; q >= 0; q--) {
+          const ev = queue[q];
+          const dt = t - ev.fire;
+
+          // Finished — clean up
+          if (dt > waveCrossDur + newsDur + 2) {
+            const el = items[ev.idx];
+            if (el) { el.style.opacity = '0'; el.style.clipPath = 'inset(0 100% 0 0)'; }
+            if (ev.ring?.parentNode) ev.ring.remove();
+            queue.splice(q, 1);
+            continue;
+          }
+
+          const d   = dots[ev.idx];
+          const lon = d.lon + spinAngle;
+          const cosLon = Math.cos(lon);
+
+          // 1. Dot pulse on globe
+          if (dt < dotPulseSec) {
+            const tN  = dt / dotPulseSec;
+            const env = tN < 0.12 ? tN / 0.12 : Math.max(0, 1 - (tN - 0.12) / 0.88);
+            const depth = cosLon > 0 ? 0.7 + 0.3 * cosLon : 0.15;
+            const el  = dotEls[ev.idx];
+            if (el) {
+              el.setAttribute('fill', d.color);
+              el.setAttribute('opacity', (env * depth).toFixed(2));
+              el.setAttribute('r', (3.0 + env * 0.8).toFixed(1));
+            }
+          }
+
+          // 2. Wave ring expansion (JS-driven positioning)
+          const maxRadius = cW * 1.5;
+          if (ev.ring && dt > 0 && dt < waveCrossDur) {
+            const wt = dt / waveCrossDur;
+            const r  = wt * maxRadius;
+            ev.ring.style.width  = `${r * 2}px`;
+            ev.ring.style.height = `${r * 2}px`;
+            ev.ring.style.opacity = Math.max(0, 0.45 * (1 - wt * 0.6)).toFixed(2);
+          } else if (ev.ring && dt >= waveCrossDur) {
+            if (ev.ring.parentNode) ev.ring.remove();
+            ev.ring = null;
+          }
+
+          // Wave front radius at current time
+          const waveFront = dt > 0 ? Math.min(1, dt / waveCrossDur) * maxRadius : 0;
+
+          // 3. News reveal — triggered when wave front passes the content area left edge
+          const distToContent = Math.max(0, contentLeft - ev.screenX);
+          if (!ev.newsTriggered && waveFront >= distToContent && dt > 0) {
+            ev.newsTriggered = true;
+          }
+          const el = items[ev.idx];
+          if (el && ev.newsTriggered) {
+            const newsT = dt - (distToContent / maxRadius) * waveCrossDur;
+            if (newsT >= 0 && newsT < newsDur) {
+              if (newsT < revealSec) {
+                const frac = newsT / revealSec;
+                el.style.clipPath = `inset(0 ${((1 - frac) * 100).toFixed(1)}% 0 0)`;
+                el.style.opacity  = '1';
+              } else if (newsT < revealSec + holdSec) {
+                el.style.clipPath = 'inset(0 0 0 0)';
+                el.style.opacity  = '1';
+              } else {
+                const f = (newsT - revealSec - holdSec) / fadeSec;
+                el.style.clipPath = 'inset(0 0 0 0)';
+                el.style.opacity  = Math.max(0, 1 - f).toFixed(2);
+              }
+            } else if (newsT >= newsDur) {
+              el.style.opacity  = '0';
+              el.style.clipPath = 'inset(0 100% 0 0)';
+            }
+          }
+
+        }
+
+        requestAnimationFrame(tick);
+      })();
+    } else {
+      // Reduced motion: show first item statically
+      if (items[0]) {
+        items[0].style.opacity  = '1';
+        items[0].style.clipPath = 'inset(0 0 0 0)';
+      }
+    }
+  }
+</script>
+
+<script>
+  // ── Network globe: spinning dots → cross-element soundwave → glyph reactions
+  const netFull = document.querySelector<HTMLElement>('.sd-network-full');
+  if (netFull) {
+    const dots: { lat: number; lon: number; color: string }[] =
+      JSON.parse(netFull.dataset.globeDots || '[]');
+    const glyphData: { leftPct: number; topPct: number; kind: string }[] =
+      JSON.parse(netFull.dataset.glyphData || '[]');
+    const spinDur = parseFloat(netFull.dataset.spin || '28');
+    const R  = parseFloat(netFull.dataset.r  || '40');
+    const cx = parseFloat(netFull.dataset.cx || '45');
+    const cy = parseFloat(netFull.dataset.cy || '45');
+
+    const dotEls  = netFull.querySelectorAll<SVGCircleElement>('.sd-netglobe-dot');
+    const glyphEls = netFull.querySelectorAll<HTMLElement>('.sd-network__glyph');
+    const overlay = netFull.querySelector<HTMLElement>('.sd-network__wave-overlay');
+    const plotEl  = netFull.querySelector<HTMLElement>('.sd-network__plot');
+
+    const count = dots.length;
+    const pulseSec = 2.5;
+    const waveCrossDur = 9.0;         // seconds for wave to cross network (matches newsfeed)
+    const dotInterval  = 6.8;         // seconds between dot firings
+
+    // Deterministic: which glyphs react to which dot flash.
+    // ~40% of glyphs react to each wave, varied per dot.
+    const glyphReactMap: boolean[][] = dots.map((_, di) =>
+      glyphData.map((_, gi) => {
+        const s = Math.sin(di * 137.5 + gi * 73.1) * 43758.5;
+        return (s - Math.floor(s)) < 0.4;
+      })
+    );
+
+    // Track which glyphs are currently animating to avoid overlap.
+    const glyphBusy = new Array(glyphData.length).fill(false);
+
+    const reducedMotion =
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (!reducedMotion) {
+    // Animate a single glyph: pop up, float, fade out.
+    function triggerGlyph(gi: number) {
+      if (glyphBusy[gi]) return;
+      const el = glyphEls[gi];
+      if (!el) return;
+      glyphBusy[gi] = true;
+      el.animate([
+        { opacity: 0, transform: 'translate(-50%, -100%) scale(0.7)', offset: 0 },
+        { opacity: 1, transform: 'translate(-50%, -130%) scale(1.05)', offset: 0.15 },
+        { opacity: 0.95, transform: 'translate(-50%, -150%) scale(1)', offset: 0.4 },
+        { opacity: 0, transform: 'translate(-50%, -180%) scale(0.9)', offset: 1 },
+      ], { duration: 1800, easing: 'ease-out', fill: 'forwards' })
+      .addEventListener('finish', () => { glyphBusy[gi] = false; });
+    }
+
+    // Track active cross-element waves for glyph triggering.
+    type ActiveWave = {
+      startTime: number;
+      originXPx: number;
+      originYPx: number;
+      color: string;
+      dotIdx: number;
+      ring: HTMLDivElement | null;
+      triggered: boolean[];
+    };
+    const activeWaves: ActiveWave[] = [];
+
+    let nextIdx  = 0;
+    let nextFire = performance.now() / 1000;
+
+    (function tick() {
+      const t = performance.now() / 1000;
+      const spinAngle = (t / spinDur) * Math.PI * 2;
+
+      // ── Fire next dot? (front hemisphere only, skip back ones) ──
+      if (t >= nextFire) {
+        let chosen = -1;
+        for (let attempt = 0; attempt < count; attempt++) {
+          const ci = (nextIdx + attempt) % count;
+          const d  = dots[ci];
+          const lon = d.lon + spinAngle;
+          if (Math.cos(lon) > 0) { chosen = ci; break; }
+        }
+
+        if (chosen < 0) {
+          nextFire = t + 0.15;
+        } else {
+          // Record fire time for this dot
+          (dots[chosen] as any)._fireTime = t;
+          nextIdx  = (chosen + 1) % count;
+          nextFire = t + dotInterval;
+
+          // Spawn cross-element wave ring
+          const d = dots[chosen];
+          const lon = d.lon + spinAngle;
+          const x = cx + R * 0.82 * Math.cos(d.lat) * Math.sin(lon);
+          const y = cy - R * 0.82 * Math.sin(d.lat);
+
+          if (overlay) {
+            const globeSvg = netFull.querySelector('.sd-network-full__globe svg');
+            const svgRect = globeSvg?.getBoundingClientRect();
+            const fullRect = netFull.getBoundingClientRect();
+            if (svgRect && fullRect) {
+              const svgScale = svgRect.width / 90;
+              const dotScreenX = svgRect.left + x * svgScale - fullRect.left;
+              const dotScreenY = svgRect.top + y * svgScale - fullRect.top;
+
+              // JS-driven ring (same approach as newsfeed)
+              const ring = document.createElement('div');
+              ring.className = 'sd-nf-cross-ring';
+              ring.style.left = `${dotScreenX}px`;
+              ring.style.top  = `${dotScreenY}px`;
+              ring.style.borderColor = d.color;
+              overlay.appendChild(ring);
+
+              activeWaves.push({
+                startTime: t,
+                originXPx: dotScreenX,
+                originYPx: dotScreenY,
+                color: d.color,
+                dotIdx: chosen,
+                ring,
+                triggered: new Array(glyphData.length).fill(false),
+              });
+            }
+          }
+        }
+      }
+
+      // ── Position all dots + pulse active ones ──
+      for (let i = 0; i < count; i++) {
+        const d = dots[i];
+        const lon = d.lon + spinAngle;
+        const cosLon = Math.cos(lon);
+        const x = cx + R * 0.82 * Math.cos(d.lat) * Math.sin(lon);
+        const y = cy - R * 0.82 * Math.sin(d.lat);
+
+        const dotEl = dotEls[i];
+        if (dotEl) {
+          dotEl.setAttribute('cx', x.toFixed(1));
+          dotEl.setAttribute('cy', y.toFixed(1));
+          dotEl.setAttribute('fill', d.color);
+
+          const fireT = (d as any)._fireTime;
+          const dt = fireT ? t - fireT : Infinity;
+          if (dt < pulseSec) {
+            const tN = dt / pulseSec;
+            const env = tN < 0.12 ? tN / 0.12 : Math.max(0, 1 - (tN - 0.12) / 0.88);
+            const depth = cosLon > 0 ? 0.7 + 0.3 * cosLon : 0.15;
+            dotEl.setAttribute('opacity', (env * depth).toFixed(2));
+            dotEl.setAttribute('r', (3.0 + env * 0.8).toFixed(1));
+          } else {
+            dotEl.setAttribute('opacity', '0');
+          }
+        }
+      }
+
+      // Check active waves → trigger glyphs.
+      if (plotEl) {
+        const plotRect = plotEl.getBoundingClientRect();
+        const fullRect = netFull.getBoundingClientRect();
+        const plotLeft = plotRect.left - fullRect.left;
+        const plotW = plotRect.width;
+
+        for (let wi = activeWaves.length - 1; wi >= 0; wi--) {
+          const w = activeWaves[wi];
+          const elapsed = t - w.startTime;
+
+          if (elapsed > waveCrossDur + 2) {
+            if (w.ring?.parentNode) w.ring.remove();
+            activeWaves.splice(wi, 1);
+            continue;
+          }
+
+          // JS-driven ring expansion (matches newsfeed approach)
+          const maxRadius = fullRect.width * 1.5;
+          if (w.ring && elapsed > 0 && elapsed < waveCrossDur) {
+            const wt = elapsed / waveCrossDur;
+            const r  = wt * maxRadius;
+            w.ring.style.width  = `${r * 2}px`;
+            w.ring.style.height = `${r * 2}px`;
+            w.ring.style.opacity = Math.max(0, 0.45 * (1 - wt * 0.6)).toFixed(2);
+          } else if (w.ring && elapsed >= waveCrossDur) {
+            if (w.ring.parentNode) w.ring.remove();
+            w.ring = null;
+          }
+
+          const waveFrontPx = Math.min(1, elapsed / waveCrossDur) * maxRadius;
+
+          // Check each glyph.
+          for (let gi = 0; gi < glyphData.length; gi++) {
+            if (w.triggered[gi] || !glyphReactMap[w.dotIdx][gi]) continue;
+
+            const g = glyphData[gi];
+            const gx = plotLeft + (g.leftPct / 100) * plotW;
+            const gy = (g.topPct / 100) * fullRect.height;
+
+            const dist = Math.hypot(gx - w.originXPx, gy - w.originYPx);
+
+            if (waveFrontPx >= dist) {
+              w.triggered[gi] = true;
+              // Small delay after wave passes (0.1–0.3s).
+              const delay = 100 + Math.random() * 200;
+              setTimeout(() => triggerGlyph(gi), delay);
+            }
+          }
+        }
+      }
+
+      requestAnimationFrame(tick);
+    })();
+    } // end if (!reducedMotion)
+  }
+</script>

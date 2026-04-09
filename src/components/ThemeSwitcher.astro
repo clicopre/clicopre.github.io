@@ -1,0 +1,258 @@
+---
+// Live theme switcher. Persists choice in localStorage as `clicopre-theme`.
+// Each theme is a small swatch. Click to apply; keyboard accessible.
+//
+// To hide the switcher in production, wrap the rendered markup in
+//   {import.meta.env.DEV && (...)}
+// For now we ship it so users can browse the alternatives.
+
+const themes = [
+  { id: 'default',    label: 'Warm paper', desc: 'Climate teal · Fraunces',         swatch: '#f4f1e8', accent: '#0a8a7a' },
+  { id: 'dispatch',   label: 'Dispatch',   desc: 'Parchment · Newsreader · clay',   swatch: '#ede6d6', accent: '#a85a3a' },
+  { id: 'frequency',  label: 'Frequency',  desc: 'Bone · Instrument Serif · copper', swatch: '#efe9df', accent: '#b76a5e' },
+  { id: 'cartograph', label: 'Cartograph', desc: 'Stone · Spectral · terracotta',   swatch: '#e8e3d2', accent: '#b8794a' },
+];
+---
+
+<aside class="theme-switcher" aria-label="Visual theme">
+  <button class="theme-switcher__toggle" type="button" aria-expanded="false" aria-controls="theme-switcher-panel">
+    <span class="theme-switcher__toggle-dot" aria-hidden="true"></span>
+    <span class="theme-switcher__toggle-text">Theme</span>
+  </button>
+  <div class="theme-switcher__panel" id="theme-switcher-panel" hidden>
+    <p class="theme-switcher__head">Visual theme</p>
+    <ul>
+      {themes.map((t) => (
+        <li>
+          <button
+            type="button"
+            class="theme-switcher__opt"
+            data-theme-id={t.id}
+            aria-pressed="false"
+          >
+            <span class="theme-switcher__opt-swatch" style={`--sw: ${t.swatch}; --ac: ${t.accent};`} aria-hidden="true"></span>
+            <span class="theme-switcher__opt-text">
+              <span class="theme-switcher__opt-label">{t.label}</span>
+              <span class="theme-switcher__opt-desc">{t.desc}</span>
+            </span>
+          </button>
+        </li>
+      ))}
+    </ul>
+    <p class="theme-switcher__foot">Saved to this browser. Reset by reloading in private mode.</p>
+  </div>
+</aside>
+
+<script is:inline>
+  // Apply theme as early as possible to avoid a flash of the wrong palette.
+  (function () {
+    try {
+      var t = localStorage.getItem('clicopre-theme');
+      if (t && t !== 'default') document.documentElement.setAttribute('data-theme', t);
+    } catch (e) {}
+  })();
+</script>
+
+<script>
+  const root = document.documentElement;
+  const wrap = document.querySelector<HTMLElement>('.theme-switcher');
+  const toggle = wrap?.querySelector<HTMLButtonElement>('.theme-switcher__toggle');
+  const panel = wrap?.querySelector<HTMLElement>('.theme-switcher__panel');
+  const opts = Array.from(wrap?.querySelectorAll<HTMLButtonElement>('.theme-switcher__opt') ?? []);
+
+  const current = (): string => root.getAttribute('data-theme') || 'default';
+
+  const sync = () => {
+    const c = current();
+    opts.forEach((o) => {
+      const isActive = o.dataset.themeId === c;
+      o.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
+  };
+
+  const setOpen = (open: boolean) => {
+    if (!panel || !toggle) return;
+    panel.hidden = !open;
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    wrap?.setAttribute('data-open', open ? 'true' : 'false');
+  };
+
+  toggle?.addEventListener('click', () => {
+    setOpen(panel?.hidden ?? true);
+  });
+
+  opts.forEach((o) => {
+    o.addEventListener('click', () => {
+      const id = o.dataset.themeId || 'default';
+      if (id === 'default') {
+        root.removeAttribute('data-theme');
+      } else {
+        root.setAttribute('data-theme', id);
+      }
+      try { localStorage.setItem('clicopre-theme', id); } catch (e) {}
+      sync();
+    });
+  });
+
+  // Close panel on outside click + Escape
+  document.addEventListener('click', (e) => {
+    if (!wrap?.contains(e.target as Node)) setOpen(false);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') setOpen(false);
+  });
+
+  sync();
+</script>
+
+<style>
+  .theme-switcher {
+    position: fixed;
+    right: 1.2rem;
+    bottom: 1.2rem;
+    z-index: 80;
+    font-family: var(--f-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* The toggle pill */
+  .theme-switcher__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.6rem 0.95rem 0.6rem 0.7rem;
+    background: var(--c-bg);
+    border: 1px solid var(--c-line-strong);
+    color: var(--c-ink);
+    cursor: pointer;
+    border-radius: 999px;
+    box-shadow: 0 2px 14px rgba(0, 0, 0, 0.06);
+    transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
+  }
+  .theme-switcher__toggle:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.10);
+  }
+  .theme-switcher__toggle-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--c-teal);
+    box-shadow: 0 0 0 2px var(--c-bg), 0 0 0 3px var(--c-teal-deep);
+  }
+
+  .theme-switcher[data-open="true"] .theme-switcher__toggle {
+    background: var(--c-ink);
+    color: var(--c-bg);
+    border-color: var(--c-ink);
+  }
+
+  /* The panel */
+  .theme-switcher__panel {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 0.7rem);
+    width: 286px;
+    background: var(--c-bg);
+    border: 1px solid var(--c-line-strong);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.10);
+    padding: 1rem 1rem 0.85rem;
+    border-radius: 4px;
+  }
+  .theme-switcher__head {
+    margin: 0 0 0.7rem;
+    font-family: var(--f-mono);
+    font-size: 0.62rem;
+    color: var(--c-ink-muted);
+    letter-spacing: 0.16em;
+  }
+  .theme-switcher__panel ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .theme-switcher__opt {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.55rem 0.55rem;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--c-ink);
+    cursor: pointer;
+    text-align: left;
+    border-radius: 2px;
+    transition: background 0.2s ease, border-color 0.2s ease;
+    text-transform: none;
+    letter-spacing: 0;
+    font-family: var(--f-sans);
+  }
+  .theme-switcher__opt:hover {
+    background: var(--c-bg-alt);
+    border-color: var(--c-line);
+  }
+  .theme-switcher__opt[aria-pressed="true"] {
+    background: var(--c-bg-alt);
+    border-color: var(--c-ink);
+  }
+
+  .theme-switcher__opt-swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--sw);
+    border: 1px solid var(--c-line-strong);
+    position: relative;
+    flex: 0 0 auto;
+  }
+  .theme-switcher__opt-swatch::after {
+    content: "";
+    position: absolute;
+    inset: 6px 6px 6px 16px;
+    background: var(--ac);
+    border-radius: 0 14px 14px 0;
+  }
+
+  .theme-switcher__opt-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.05rem;
+    line-height: 1.2;
+    min-width: 0;
+  }
+  .theme-switcher__opt-label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--c-ink);
+  }
+  .theme-switcher__opt-desc {
+    font-size: 0.7rem;
+    color: var(--c-ink-muted);
+    font-family: var(--f-mono);
+    letter-spacing: 0.02em;
+  }
+
+  .theme-switcher__foot {
+    margin: 0.7rem 0 0;
+    padding-top: 0.6rem;
+    border-top: 1px solid var(--c-line);
+    font-family: var(--f-mono);
+    font-size: 0.58rem;
+    color: var(--c-ink-muted);
+    letter-spacing: 0.08em;
+    text-transform: none;
+    line-height: 1.5;
+  }
+
+  @media (max-width: 480px) {
+    .theme-switcher { right: 0.6rem; bottom: 0.6rem; }
+    .theme-switcher__panel { width: 260px; }
+  }
+</style>

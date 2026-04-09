@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import ThemeSwitcher from '../components/ThemeSwitcher.astro';
 
 interface Props {
   title?: string;
@@ -12,6 +13,53 @@ const {
   title = 'CLICOPRE — Climate Communication & Political Response',
   description = 'CLICOPRE studies how extreme weather events shape climate communication and political response in the EU and the US. A research project by Duccio Gamannossi degl\u2019Innocenti (University of Padua, Harvard University).',
 } = Astro.props;
+
+const siteUrl = 'https://clicopre.github.io';
+const ogImage = `${siteUrl}/og.png`;
+
+// Schema.org JSON-LD — helps Google Scholar and academic crawlers
+// recognise this as a research project, with the PI as a Person.
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'ResearchProject',
+      '@id': `${siteUrl}/#project`,
+      name: 'CLICOPRE',
+      alternateName: 'Climate Communication & Political Response',
+      description,
+      url: siteUrl,
+      inLanguage: 'en',
+      funding: {
+        '@type': 'Grant',
+        name: 'Marie Skłodowska-Curie Actions — Seal of Excellence',
+        funder: [
+          {
+            '@type': 'Organization',
+            name: 'Università degli Studi di Padova',
+            url: 'https://www.unipd.it/',
+          },
+          {
+            '@type': 'Organization',
+            name: 'Fondazione Cassa di Risparmio di Padova e Rovigo',
+            url: 'https://www.fondazionecariparo.it/',
+          },
+        ],
+      },
+      member: { '@id': `${siteUrl}/#pi` },
+    },
+    {
+      '@type': 'Person',
+      '@id': `${siteUrl}/#pi`,
+      name: 'Duccio Gamannossi degl’Innocenti',
+      jobTitle: 'Principal Investigator',
+      affiliation: [
+        { '@type': 'Organization', name: 'Università degli Studi di Padova' },
+        { '@type': 'Organization', name: 'Harvard University' },
+      ],
+    },
+  ],
+};
 ---
 
 <!doctype html>
@@ -24,18 +72,44 @@ const {
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Fraunces (display, variable, optical sizes) + IBM Plex Sans (UI/body) + IBM Plex Mono (eyebrows/meta) -->
+    <!-- Default theme: Fraunces + IBM Plex Sans + IBM Plex Mono.
+         Alternative themes load Newsreader/Literata/JetBrains Mono (Dispatch),
+         Instrument Serif/Manrope/Space Mono (Frequency),
+         Spectral/DM Sans/DM Mono (Cartograph).
+         All families share one stylesheet so theme switching is instant. -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..700,30..100,0..1&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..700,30..100,0..1&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,300..600&family=Literata:opsz,wght@7..72,300..600&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Manrope:wght@300;400;500;600&family=Space+Mono:wght@400;700&family=Spectral:wght@300;400;500;600&family=DM+Sans:opsz,wght@9..40,300..600&family=DM+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
     <title>{title}</title>
+
+    <!-- If JS is disabled, scroll-reveal stays open instead of leaving content invisible. -->
+    <noscript>
+      <style>.reveal { opacity: 1 !important; transform: none !important; }</style>
+    </noscript>
+
+    <!-- Canonical -->
+    <link rel="canonical" href={siteUrl + '/'} />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:url" content="https://clicopre.github.io/" />
+    <meta property="og:url" content={siteUrl + '/'} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="CLICOPRE — How climate shocks shape political communication and the policy response." />
+    <meta property="og:site_name" content="CLICOPRE" />
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <!-- Schema.org JSON-LD -->
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
@@ -44,6 +118,7 @@ const {
       <slot />
     </main>
     <Footer />
+    <ThemeSwitcher />
 
     <script>
       // Scroll-reveal via IntersectionObserver — no library.

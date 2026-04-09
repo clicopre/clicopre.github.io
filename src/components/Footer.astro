@@ -1,57 +1,111 @@
 ---
+import SignatureStrip from './SignatureStrip.astro';
+
+// Institutional context. Each tile is a "labelled slot" — when real SVG
+// logos are dropped into brand_assets/institutions/, swap the text for
+// <img>. The label/role is what gives the strip its rhythm even before
+// the marks arrive.
 const institutions = [
-  'Università degli Studi di Padova',
-  'Harvard University',
-  'MSCA Seal of Excellence',
-  'Fondazione Cassa di Risparmio di Padova e Rovigo',
+  { role: 'Host-inbound',       name: 'University of Padua',   long: 'University of Padua' },
+  { role: 'Host-outbound',     name: 'Harvard University',     long: 'Harvard University' },
+  { role: 'Funding Scheme',     name: 'MSCA Seal of Excellence@UNIPD', long: 'Marie Skłodowska-Curie Actions — Seal of Excellence' },
+  {
+    role: 'Funder',
+    long: 'Fondazione Cassa di Risparmio di Padova e Rovigo',
+    href: 'https://fondazionecariparo.it/',
+    logo: '/institutions/cariparo-logo.svg',
+    logoAlt: 'Fondazione Cariparo logo',
+  },
 ];
 const year = new Date().getFullYear();
 ---
 
 <footer class="site-footer">
-  <div class="warming-stripes site-footer__stripes" aria-hidden="true">
-    {Array.from({ length: 20 }).map(() => <i></i>)}
-  </div>
+  <SignatureStrip class="site-footer__stripes" />
 
   <div class="container">
     <div class="site-footer__grid">
       <div class="site-footer__brand">
         <a class="brand" href="/" aria-label="CLICOPRE — home">
-          <span class="brand__word">Clicopre</span>
-          <span class="brand__sub">A research project</span>
+          <span class="brand__word">CLICOPRE</span>
         </a>
         <p class="site-footer__tag">
-          Climate shocks, political communication, and the policy response
-          in the European Union and the United States.
+          Climate communication and policy responses to extreme weather events
         </p>
-      </div>
-
-      <div>
-        <h4>Hosted &amp; supported by</h4>
-        <ul class="site-footer__list">
-          {institutions.map((i) => <li>{i}</li>)}
-        </ul>
       </div>
 
       <div>
         <h4>Project</h4>
         <ul class="site-footer__list">
-          <li><a href="#research">Research agenda</a></li>
+          <li><a href="#research">Main research questions</a></li>
           <li><a href="#approach">Approach</a></li>
           <li><a href="#outputs">Outputs</a></li>
           <li><a href="#updates">Updates</a></li>
           <li><a href="#contact">Contact</a></li>
         </ul>
       </div>
+
+      <div class="site-footer__contact-col">
+        <h4>Contact</h4>
+        <p class="site-footer__contact">
+          clicopre-AT-gmail.com
+        </p>
+        <p class="site-footer__address">
+          <strong>Department of Economics and Management &ldquo;Marco Fanno&rdquo;</strong>
+          Università di Padova<br />
+          Via del Santo 33<br />
+          35123 Padova, Italy
+        </p>
+        <p class="site-footer__address">
+          <strong>Department of Government</strong>
+          Harvard University<br />
+          CGIS Knafel Building<br />
+          1737 Cambridge Street<br />
+          Cambridge, MA 02138
+        </p>
+      </div>
     </div>
+
+    <!-- Institutional strip — labelled tiles. Real SVG logos drop into
+         brand_assets/institutions/ and replace the .institutions__name text. -->
+    <section class="institutions" aria-label="Hosted and supported by">
+      <h4 class="institutions__heading">Hosted &amp; supported by</h4>
+      <ul class="institutions__grid">
+        {institutions.map((i) => (
+          <li class="institutions__tile">
+            <span class="institutions__role">{i.role}</span>
+              {i.logo ? (
+                <a
+                  class="institutions__logo-link"
+                  href={i.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={i.long}
+                  title={i.long}
+                >
+                  <img
+                    class="institutions__logo"
+                    src={i.logo}
+                    alt={i.logoAlt ?? i.long}
+                    loading="lazy"
+                  />
+                  <span class="institutions__logo-fallback">{i.name}</span>
+                </a>
+              ) : (
+                <span class="institutions__name" title={i.long}>{i.name}</span>
+              )}
+          </li>
+        ))}
+      </ul>
+    </section>
+
 
     <hr class="rule" />
 
     <div class="site-footer__meta">
       <p class="meta-line">© {year} Clicopre · Duccio Gamannossi degl’Innocenti</p>
       <p class="meta-line">
-        MSCA Seal of Excellence · Università di Padova · with the contribution
-        of Fondazione Cassa di Risparmio di Padova e Rovigo
+        <a href="https://github.com/clicopre/clicopre.github.io">Source on GitHub</a>
       </p>
     </div>
   </div>
@@ -75,17 +129,134 @@ const year = new Date().getFullYear();
 
   .site-footer__grid {
     display: grid;
-    grid-template-columns: 1.6fr 1fr 1fr;
+    grid-template-columns: 1.6fr 1fr 1.2fr;
     gap: clamp(2rem, 5vw, 4.5rem);
     align-items: start;
   }
   @media (max-width: 760px) {
-    .site-footer__grid { grid-template-columns: 1fr; }
+    .site-footer__grid { grid-template-columns: 1fr; gap: 2.4rem; }
   }
+  .site-footer__contact {
+    font-size: var(--step--1);
+    line-height: 1.6;
+    color: color-mix(in srgb, var(--c-bg) 78%, transparent);
+  }
+  .site-footer__contact a {
+    color: inherit;
+  }
+  .site-footer__contact a:hover { color: var(--c-teal-soft); }
+  .site-footer__address {
+    line-height: 1.65;
+    margin-top: 0.6rem;
+    font-size: var(--step--1);
+    color: color-mix(in srgb, var(--c-bg) 55%, transparent);
+  }
+  .site-footer__address strong {
+    font-family: var(--f-mono);
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--c-bg) 78%, transparent);
+    display: block;
+    margin-bottom: 0;
+  }
+
+  /* ── Institutional strip ────────────────────────────── */
+  .institutions {
+    margin-top: clamp(3rem, 5vw, 4.5rem);
+    padding-top: clamp(1.8rem, 3vw, 2.4rem);
+    border-top: 1px solid color-mix(in srgb, var(--c-bg) 18%, transparent);
+  }
+  .institutions__heading,
+  .funding__heading {
+    /* match site-footer h4 */
+    font-family: var(--f-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--c-teal-soft);
+    margin: 0 0 1.4rem;
+    font-weight: 500;
+  }
+  .institutions__grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0;
+  }
+  @media (max-width: 880px) {
+    .institutions__grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  .institutions__tile {
+    display: grid;
+    gap: 0.5rem;
+    padding: 0.2rem 1.2rem;
+    border-left: 1px solid color-mix(in srgb, var(--c-bg) 22%, transparent);
+  }
+  .institutions__tile:first-child { padding-left: 0; border-left: none; }
+  @media (max-width: 880px) {
+    .institutions__tile { padding: 0.2rem 1rem; }
+    .institutions__tile:nth-child(odd) { padding-left: 0; border-left: none; }
+  }
+  .institutions__role {
+    font-family: var(--f-mono);
+    font-size: 0.62rem;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--c-bg) 50%, transparent);
+  }
+  .institutions__name {
+    font-family: var(--f-display);
+    font-variation-settings: "opsz" 36, "SOFT" 30, "WONK" 0;
+    font-size: var(--step-1);
+    font-weight: 400;
+    letter-spacing: -0.012em;
+    color: var(--c-bg);
+    line-height: 1.15;
+  }
+    .institutions__logo-link {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.35rem;
+      width: fit-content;
+    }
+    .institutions__logo {
+      display: block;
+      width: auto;
+      max-width: 100%;
+      height: clamp(1.5rem, 2.8vw, 2.1rem);
+      object-fit: contain;
+    }
+    .institutions__logo-fallback {
+      font-family: var(--f-mono);
+      font-size: 0.66rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: color-mix(in srgb, var(--c-bg) 72%, transparent);
+      line-height: 1;
+    }
+
+  /* ── Funding block ──────────────────────────────────── */
+  .funding {
+    margin-top: clamp(2.4rem, 4vw, 3.4rem);
+    max-width: 78ch;
+  }
+  .funding__body {
+    margin: 0;
+    color: color-mix(in srgb, var(--c-bg) 78%, transparent);
+    font-size: var(--step--1);
+    line-height: 1.65;
+  }
+  .funding__body strong { color: var(--c-bg); font-weight: 500; }
 
   .site-footer h4 {
     font-family: var(--f-mono);
-    font-size: 0.7rem;
+    font-size: 0.78rem;
     text-transform: uppercase;
     letter-spacing: 0.14em;
     color: var(--c-teal-soft);
