@@ -1531,6 +1531,37 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
     const waveCrossDur = 9.0;         // seconds for wave to cross network (matches newsfeed)
     const dotInterval  = 6.8;         // seconds between dot firings
 
+    // ── Mobile: rescale network SVG viewBox so circles stay circular ──
+    const isMobile = window.matchMedia('(max-width: 600px)').matches;
+    if (isMobile && plotEl) {
+      const netSvg = plotEl.querySelector('svg');
+      if (netSvg) {
+        const cW = plotEl.clientWidth;
+        const cH = plotEl.clientHeight;
+        const vbW = 1200;
+        const vbH = 60;
+        // New viewBox height that matches the container's aspect ratio
+        const newVbH = vbW * cH / cW;
+        const yScale = newVbH / vbH;
+        netSvg.setAttribute('viewBox', `0 0 ${vbW} ${newVbH.toFixed(0)}`);
+
+        // Scale y-coordinates of all nodes and edges
+        netSvg.querySelectorAll<SVGCircleElement>('circle').forEach(c => {
+          const cy = parseFloat(c.getAttribute('cy') || '0');
+          c.setAttribute('cy', (cy * yScale).toFixed(1));
+          // Enlarge nodes for mobile visibility
+          const r = parseFloat(c.getAttribute('r') || '0');
+          c.setAttribute('r', (r * 1.4).toFixed(1));
+        });
+        netSvg.querySelectorAll<SVGLineElement>('line').forEach(l => {
+          const y1 = parseFloat(l.getAttribute('y1') || '0');
+          const y2 = parseFloat(l.getAttribute('y2') || '0');
+          l.setAttribute('y1', (y1 * yScale).toFixed(1));
+          l.setAttribute('y2', (y2 * yScale).toFixed(1));
+        });
+      }
+    }
+
     // Deterministic: which glyphs react to which dot flash.
     // ~40% of glyphs react to each wave, varied per dot.
     const glyphReactMap: boolean[][] = dots.map((_, di) =>
@@ -1702,7 +1733,8 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
 
             const g = glyphData[gi];
             const gx = plotLeft + (g.leftPct / 100) * plotW;
-            const gy = (g.topPct / 100) * fullRect.height;
+            const plotTop = plotRect.top - fullRect.top;
+            const gy = plotTop + (g.topPct / 100) * plotRect.height;
 
             const dist = Math.hypot(gx - w.originXPx, gy - w.originYPx);
 
@@ -1719,5 +1751,14 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
       requestAnimationFrame(tick);
     })();
     } // end if (!reducedMotion)
+  }
+
+  // ── Rollcall mobile: use slice to show center portion with correct proportions ──
+  const rcPlot = document.querySelector<HTMLElement>('.sd-rollcall__plot');
+  if (rcPlot && window.matchMedia('(max-width: 600px)').matches) {
+    const rcSvg = rcPlot.querySelector('svg');
+    if (rcSvg) {
+      rcSvg.setAttribute('preserveAspectRatio', 'xMidYMax slice');
+    }
   }
 </script>
