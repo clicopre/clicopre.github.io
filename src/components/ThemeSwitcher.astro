@@ -22,19 +22,6 @@
     <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
     <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
   </svg>
-  <!-- Auto icon (half sun/moon) -->
-  <svg class="mode-btn__icon mode-btn__icon--auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="12" cy="12" r="5" />
-    <path d="M12 7 A5 5 0 0 1 12 17 Z" fill="currentColor" />
-    <line x1="12" y1="1" x2="12" y2="3" />
-    <line x1="12" y1="21" x2="12" y2="23" />
-    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-    <line x1="1" y1="12" x2="3" y2="12" />
-    <line x1="21" y1="12" x2="23" y2="12" />
-    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-  </svg>
   <!-- Moon icon (dark mode) -->
   <svg class="mode-btn__icon mode-btn__icon--dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
@@ -46,7 +33,7 @@
   (function () {
     try {
       var m = localStorage.getItem('clicopre-mode');
-      if (m && m !== 'auto') document.documentElement.setAttribute('data-mode', m);
+      if (m) document.documentElement.setAttribute('data-mode', m);
     } catch (e) {}
   })();
 </script>
@@ -54,39 +41,40 @@
 <script>
   const root = document.documentElement;
   const btn = document.querySelector<HTMLButtonElement>('.mode-btn');
-  const modes = ['light', 'auto', 'dark'] as const;
-  type Mode = typeof modes[number];
 
-  const labels: Record<Mode, string> = {
-    light: 'Light mode — click for auto',
-    auto: 'Auto mode — click for dark',
-    dark: 'Dark mode — click for light',
+  const getMode = (): 'light' | 'dark' => {
+    const stored = root.getAttribute('data-mode');
+    if (stored === 'light' || stored === 'dark') return stored;
+    // First visit: resolve from OS preference
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   };
 
-  const getMode = (): Mode => (root.getAttribute('data-mode') as Mode) || 'auto';
-
-  const apply = (m: Mode) => {
-    if (m === 'auto') {
-      root.removeAttribute('data-mode');
-    } else {
-      root.setAttribute('data-mode', m);
-    }
+  const apply = (m: 'light' | 'dark') => {
+    root.setAttribute('data-mode', m);
     try { localStorage.setItem('clicopre-mode', m); } catch (e) {}
     if (btn) {
       btn.setAttribute('data-current', m);
-      btn.setAttribute('aria-label', labels[m]);
-      btn.setAttribute('title', labels[m]);
+      btn.setAttribute('aria-label', m === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+      btn.setAttribute('title', m === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
     }
   };
 
   btn?.addEventListener('click', () => {
-    const cur = getMode();
-    const next = modes[(modes.indexOf(cur) + 1) % modes.length];
-    apply(next);
+    apply(getMode() === 'light' ? 'dark' : 'light');
   });
 
-  // Init
-  apply(getMode());
+  // Init — set icon to match current state without changing mode if not stored
+  const stored = localStorage.getItem('clicopre-mode');
+  if (stored === 'light' || stored === 'dark') {
+    apply(stored);
+  } else {
+    // First visit: just set the icon, let CSS handle auto
+    const initial = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    if (btn) {
+      btn.setAttribute('data-current', initial);
+      btn.setAttribute('aria-label', initial === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+    }
+  }
 </script>
 
 <style>
@@ -128,12 +116,11 @@
 
   /* Show the right icon based on data-current */
   .mode-btn[data-current="light"] .mode-btn__icon--light,
-  .mode-btn[data-current="auto"] .mode-btn__icon--auto,
   .mode-btn[data-current="dark"] .mode-btn__icon--dark {
     display: block;
   }
-  /* Before JS runs, default to auto */
-  .mode-btn:not([data-current]) .mode-btn__icon--auto {
+  /* Before JS runs, show sun by default */
+  .mode-btn:not([data-current]) .mode-btn__icon--light {
     display: block;
   }
 
