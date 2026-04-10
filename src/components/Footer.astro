@@ -104,7 +104,7 @@ const year = new Date().getFullYear();
 
     <div class="site-footer__meta">
       <p class="meta-line">© {year} Clicopre · Duccio Gamannossi degl’Innocenti</p>
-
+      <a class="back-to-top" href="#">↑ Back to top</a>
     </div>
   </div>
 </footer>
@@ -147,7 +147,7 @@ const year = new Date().getFullYear();
     line-height: 1.65;
     margin-top: 0.6rem;
     font-size: var(--step--1);
-    color: color-mix(in srgb, var(--c-bg) 55%, transparent);
+    color: color-mix(in srgb, var(--c-bg) 72%, transparent);
   }
   .site-footer__address strong {
     font-family: var(--f-mono);
@@ -300,7 +300,7 @@ const year = new Date().getFullYear();
     font-weight: 400;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: color-mix(in srgb, var(--c-bg) 55%, transparent);
+    color: color-mix(in srgb, var(--c-bg) 68%, transparent);
     margin-top: 0.3rem;
   }
 
@@ -313,11 +313,20 @@ const year = new Date().getFullYear();
     flex-wrap: wrap;
     gap: 0.6rem 2rem;
     justify-content: space-between;
-    color: color-mix(in srgb, var(--c-bg) 55%, transparent);
+    color: color-mix(in srgb, var(--c-bg) 68%, transparent);
   }
   .site-footer__meta .meta-line {
     margin: 0;
     max-width: 56ch;
     color: inherit;
   }
+  .back-to-top {
+    font-family: var(--f-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--c-bg) 60%, transparent);
+    transition: color 0.3s ease;
+  }
+  .back-to-top:hover { color: var(--c-teal-soft); }
 </style>

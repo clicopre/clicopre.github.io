@@ -84,13 +84,61 @@ const nav = [
     toggle.addEventListener('click', () => {
       setOpen(header.dataset.navOpen !== 'true');
     });
-    // close after clicking any nav link
+    // close after clicking any nav link + focus the target section heading
     nav.addEventListener('click', (e) => {
-      if ((e.target as HTMLElement).closest('a')) setOpen(false);
+      const link = (e.target as HTMLElement).closest('a');
+      if (link) {
+        setOpen(false);
+        const id = link.getAttribute('href')?.replace('#', '');
+        if (id) {
+          const section = document.getElementById(id);
+          if (section) {
+            const heading = section.querySelector('h2, h3');
+            if (heading) {
+              heading.setAttribute('tabindex', '-1');
+              setTimeout(() => (heading as HTMLElement).focus({ preventScroll: true }), 400);
+            }
+          }
+        }
+      }
     });
     // close on escape
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && header.dataset.navOpen === 'true') setOpen(false);
+      if (e.key === 'Escape' && header.dataset.navOpen === 'true') {
+        setOpen(false);
+        toggle.focus();
+      }
+      // focus trap when mobile nav is open
+      if (e.key === 'Tab' && header.dataset.navOpen === 'true') {
+        const focusable = [toggle, ...nav.querySelectorAll<HTMLElement>('a')];
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    });
+  }
+
+  // Desktop inline nav — focus heading on click
+  const inlineNav = document.querySelector<HTMLElement>('.site-nav--inline');
+  if (inlineNav) {
+    inlineNav.addEventListener('click', (e) => {
+      const link = (e.target as HTMLElement).closest('a');
+      if (!link) return;
+      const id = link.getAttribute('href')?.replace('#', '');
+      if (!id) return;
+      const section = document.getElementById(id);
+      if (!section) return;
+      const heading = section.querySelector('h2, h3');
+      if (heading) {
+        heading.setAttribute('tabindex', '-1');
+        setTimeout(() => (heading as HTMLElement).focus({ preventScroll: true }), 400);
+      }
     });
   }
 </script>
@@ -218,7 +266,10 @@ const nav = [
   .site-nav a:hover .site-nav__num,
   .site-nav a:focus-visible .site-nav__num { color: var(--c-teal-deep); }
   .site-nav a:hover::after,
-  .site-nav a:focus-visible::after { right: 0; }
+  .site-nav a:focus-visible::after,
+  .site-nav a.is-active::after { right: 0; }
+  .site-nav a.is-active { color: var(--c-ink); }
+  .site-nav a.is-active .site-nav__num { color: var(--c-teal-deep); }
   .site-nav a:focus-visible {
     outline: 2px solid var(--c-teal-deep);
     outline-offset: 4px;

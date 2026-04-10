@@ -1753,12 +1753,56 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
     } // end if (!reducedMotion)
   }
 
-  // ── Rollcall mobile: use slice to show center portion with correct proportions ──
+  // ── Rollcall mobile: rescale viewBox so circles stay circular ──
   const rcPlot = document.querySelector<HTMLElement>('.sd-rollcall__plot');
   if (rcPlot && window.matchMedia('(max-width: 600px)').matches) {
     const rcSvg = rcPlot.querySelector('svg');
     if (rcSvg) {
-      rcSvg.setAttribute('preserveAspectRatio', 'xMidYMax slice');
+      const cW = rcPlot.clientWidth;
+      const cH = rcPlot.clientHeight;
+      const vbW = 1200;
+      const vbH = 60;
+      const newVbH = vbW * cH / cW;
+      const yScale = newVbH / vbH;
+      rcSvg.setAttribute('viewBox', `0 0 ${vbW} ${newVbH.toFixed(0)}`);
+
+      // Scale y-coords of all circles (seats + MPs)
+      rcSvg.querySelectorAll<SVGCircleElement>('circle').forEach(c => {
+        const cy = parseFloat(c.getAttribute('cy') || '0');
+        c.setAttribute('cy', (cy * yScale).toFixed(1));
+        // Scale r for visibility
+        const r = parseFloat(c.getAttribute('r') || '0');
+        c.setAttribute('r', (r * 1.3).toFixed(1));
+        // Scale SMIL cy animations
+        c.querySelectorAll('animate[attributeName="cy"]').forEach(a => {
+          const vals = a.getAttribute('values');
+          if (vals) {
+            a.setAttribute('values', vals.split(';').map(v => (parseFloat(v) * yScale).toFixed(1)).join(';'));
+          }
+        });
+      });
+
+      // Scale ellipses (soundwaves): cy + ry
+      rcSvg.querySelectorAll<SVGEllipseElement>('ellipse').forEach(e => {
+        const cy = parseFloat(e.getAttribute('cy') || '0');
+        const ry = parseFloat(e.getAttribute('ry') || '0');
+        e.setAttribute('cy', (cy * yScale).toFixed(1));
+        e.setAttribute('ry', (ry * yScale).toFixed(1));
+        e.querySelectorAll('animate[attributeName="ry"]').forEach(a => {
+          const vals = a.getAttribute('values');
+          if (vals) {
+            a.setAttribute('values', vals.split(';').map(v => (parseFloat(v) * yScale).toFixed(1)).join(';'));
+          }
+        });
+      });
+
+      // Scale rect (desk): y + height
+      rcSvg.querySelectorAll<SVGRectElement>('rect').forEach(r => {
+        const y = parseFloat(r.getAttribute('y') || '0');
+        const h = parseFloat(r.getAttribute('height') || '0');
+        r.setAttribute('y', (y * yScale).toFixed(1));
+        r.setAttribute('height', (h * yScale).toFixed(1));
+      });
     }
   }
 </script>

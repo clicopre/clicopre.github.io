@@ -148,6 +148,27 @@
 }
 
 /* ------------------------------------------------------------------ */
+/* Dark mode — auto-triggered by OS preference                         */
+/* ------------------------------------------------------------------ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --c-bg: #0e1d28;
+    --c-bg-alt: #152836;
+    --c-bg-deep: #1b3244;
+    --c-ink: #e8e4da;
+    --c-ink-soft: #b8c0c8;
+    --c-ink-muted: #7a8a96;
+    --c-line: #2a3e4e;
+    --c-line-strong: #3a5268;
+
+    --c-teal: #12d4bc;
+    --c-teal-deep: #0fb8a3;
+    --c-teal-soft: #0a3d36;
+    --c-amber: #e0944a;
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /* Reset                                                               */
 /* ------------------------------------------------------------------ */
 *,
@@ -457,6 +478,10 @@ section.deep { background: var(--c-bg-deep); }
   color: var(--c-ink);
 }
 .btn-ghost:hover { background: var(--c-ink); border-color: var(--c-ink); color: var(--c-bg); }
+.btn:focus-visible {
+  outline: 2px solid var(--c-teal-deep);
+  outline-offset: 4px;
+}
 
 /* ------------------------------------------------------------------ */
 /* Scroll-reveal                                                       */
@@ -1268,30 +1293,29 @@ section.deep { background: var(--c-bg-deep); }
 
 /* ── Mobile: network + rollcall ────────────────────────────────── */
 @media (max-width: 600px) {
-  /* Network: stack globe above graph, taller container */
+  /* Network: keep globe on left but shrink, taller plot */
   .sd-network-full {
-    grid-template-columns: 1fr;
+    grid-template-columns: 56px 1fr;
     height: auto;
   }
   .sd-network-full__globe {
-    width: 100%;
-    height: 44px;
-    border-bottom: 1px solid var(--c-line);
+    width: 56px;
+    height: 80px;
   }
   .sd-network-full__globe svg {
-    width: 40px;
-    height: 40px;
+    width: 42px;
+    height: 42px;
   }
   .sd-network__plot {
-    height: 100px;
+    height: 80px;
   }
   .sd-network__glyph {
     font-size: 0.72rem;
   }
 
-  /* Rollcall: taller container for slice to show more */
+  /* Rollcall: taller container, JS rescales viewBox */
   .sd-rollcall__plot {
-    height: 90px;
+    height: 80px;
   }
 }
 
@@ -1309,5 +1333,24 @@ section.deep { background: var(--c-bg-deep); }
   .sd-contour__path { stroke-dashoffset: 0; stroke-dasharray: 1300; }
   .sd-rollcall__mp animate,
   .sd-rollcall__wave animate { display: none; }
+}
+
+/* ------------------------------------------------------------------ */
+/* Print                                                               */
+/* ------------------------------------------------------------------ */
+@media print {
+  body::before { display: none; }
+  .site-header,
+  .nav-toggle,
+  .site-nav,
+  .back-to-top,
+  [class*="sd-"],
+  .sig-strip { display: none !important; }
+  body { background: #fff; color: #000; font-size: 11pt; }
+  .container { max-width: 100%; padding: 0; }
+  .reveal { opacity: 1 !important; transform: none !important; }
+  a[href]::after { content: " (" attr(href) ")"; font-size: 0.85em; color: #555; }
+  a.brand::after { content: none; }
+  section { break-inside: avoid; }
 }
 

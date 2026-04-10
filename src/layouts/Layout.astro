@@ -67,7 +67,10 @@ const jsonLd = {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#0b1d2a" />
+    <meta name="robots" content="index, follow" />
+    <meta name="keywords" content="climate communication, extreme weather, political response, NLP, causal inference, EU, US, MSCA, Marie Curie, University of Padua, Harvard" />
+    <meta name="theme-color" content="#f4f1e8" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0e1d28" media="(prefers-color-scheme: dark)" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -136,6 +139,25 @@ const jsonLd = {
         els.forEach((el) => io.observe(el));
       } else {
         els.forEach((el) => el.classList.add('is-visible'));
+      }
+    </script>
+
+    <script>
+      // Scroll-spy — highlights the nav link for the section currently in view.
+      const sections = document.querySelectorAll<HTMLElement>('section[id]');
+      const navLinks = document.querySelectorAll<HTMLAnchorElement>('.site-nav a[href^="#"]');
+      if (sections.length && navLinks.length) {
+        const spy = new IntersectionObserver(
+          (entries) => {
+            for (const e of entries) {
+              const id = e.target.id;
+              const link = document.querySelector(`.site-nav--inline a[href="#${id}"]`);
+              if (link) link.classList.toggle('is-active', e.isIntersecting);
+            }
+          },
+          { rootMargin: '-20% 0px -60% 0px' }
+        );
+        sections.forEach((s) => spy.observe(s));
       }
     </script>
 

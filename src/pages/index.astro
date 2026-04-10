@@ -126,7 +126,7 @@ const updates: { date: string; title: string; excerpt: string; href?: string }[]
 
       <div class="pillars">
         {pillars.map((p, i) => (
-          <article class="pillar reveal" data-delay={String(i + 1)}>
+          <article class="pillar reveal" tabindex="0" data-delay={String(i + 1)}>
             <header class="pillar__head">
               <span class="pillar__n tabular">— {p.n}</span>
               <h3 class="pillar__title">{p.title}</h3>
@@ -224,8 +224,6 @@ const updates: { date: string; title: string; excerpt: string; href?: string }[]
         ))}
       </div>
 
-      <p class="streams__note meta-line reveal" data-delay="4">
-      </p>
     </div>
   </section>
 
@@ -440,10 +438,16 @@ const updates: { date: string; title: string; excerpt: string; href?: string }[]
     transition: opacity 0.45s var(--ease), transform 0.45s var(--ease),
                 color 0.4s ease;
   }
-  .pillar:hover {
+  .pillar:hover,
+  .pillar:focus-visible {
     background: color-mix(in srgb, var(--c-teal) 5%, transparent);
   }
+  .pillar:focus-visible {
+    outline: 2px solid var(--c-teal-deep);
+    outline-offset: -2px;
+  }
   .pillar:hover .pillar__arrow,
+  .pillar:focus-visible .pillar__arrow,
   .pillar:focus-within .pillar__arrow {
     opacity: 1;
     transform: translateX(0);
@@ -537,6 +541,7 @@ const updates: { date: string; title: string; excerpt: string; href?: string }[]
     .two-col { grid-template-columns: 1fr; }
   }
   .two-col .section-head { margin-bottom: 0; }
+  .two-col p { max-width: var(--max-w-prose); }
   .two-col strong { color: var(--c-ink); font-weight: 500; }
 
   /* Lighten section headings so the display face feels less heavy. */
