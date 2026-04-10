@@ -192,6 +192,15 @@
 *::before,
 *::after { box-sizing: border-box; }
 
+/* Smooth fade when toggling light/dark mode */
+:root[data-mode] *,
+:root[data-mode] *::before,
+:root[data-mode] *::after {
+  transition: background-color 0.4s ease, color 0.4s ease,
+              border-color 0.4s ease, box-shadow 0.4s ease,
+              fill 0.4s ease, stroke 0.4s ease;
+}
+
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
