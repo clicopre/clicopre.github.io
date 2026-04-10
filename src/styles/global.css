@@ -148,6 +148,28 @@
 }
 
 /* ------------------------------------------------------------------ */
+/* Dark mode — auto-triggered by OS preference                         */
+/* Warm brown-blacks to preserve the scholarly, editorial feel.         */
+/* ------------------------------------------------------------------ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --c-bg: #141110;
+    --c-bg-alt: #1c1917;
+    --c-bg-deep: #0e0c0a;
+    --c-ink: #e8e4db;
+    --c-ink-soft: #b8b0a4;
+    --c-ink-muted: #7d756b;
+    --c-line: #2a2522;
+    --c-line-strong: #3d3632;
+
+    --c-teal: #14d4bd;
+    --c-teal-deep: #0fb8a3;
+    --c-teal-soft: #1a2e2a;
+    --c-amber: #e0883a;
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /* Reset                                                               */
 /* ------------------------------------------------------------------ */
 *,
