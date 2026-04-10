@@ -54,6 +54,7 @@ const updates: { date: string; title: string; excerpt: string; href?: string }[]
 
   <!-- ───────────────── HERO ───────────────── -->
   <section class="hero">
+    <div class="hero__gradient" aria-hidden="true"></div>
     <div class="container hero__inner">
       <aside class="hero__meta">
         <p class="meta-line">§&nbsp;CLICOPRE</p>
@@ -100,12 +101,12 @@ const updates: { date: string; title: string; excerpt: string; href?: string }[]
       </div>
       <div class="scope-strip__cell reveal" data-delay="1">
         <span class="scope-strip__label">Coverage</span>
-        <span class="scope-strip__value">EU (15 countries)</span>
+        <span class="scope-strip__value">EU (<span class="count-up" data-target="15">0</span> countries)</span>
         <span class="scope-strip__value">US</span>
       </div>
       <div class="scope-strip__cell reveal" data-delay="2">
         <span class="scope-strip__label">Period</span>
-        <span class="scope-strip__value tabular">2000&nbsp;-&nbsp;2024</span>
+        <span class="scope-strip__value tabular"><span class="count-up" data-target="2000">0</span>&nbsp;-&nbsp;<span class="count-up" data-target="2024">0</span></span>
       </div>
       <div class="scope-strip__cell reveal" data-delay="3">
         <span class="scope-strip__label">Methods</span>
@@ -286,6 +287,49 @@ const updates: { date: string; title: string; excerpt: string; href?: string }[]
   </section>
 </Layout>
 
+<script>
+  // ── Count-up animation on scope strip numbers ──
+  const counters = document.querySelectorAll<HTMLElement>('.count-up');
+  if (counters.length && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        const el = e.target as HTMLElement;
+        const target = parseInt(el.dataset.target || '0', 10);
+        const duration = target > 100 ? 1200 : 800;
+        const start = performance.now();
+        const tick = (now: number) => {
+          const t = Math.min((now - start) / duration, 1);
+          const ease = 1 - Math.pow(1 - t, 3); // ease-out cubic
+          el.textContent = String(Math.round(ease * target));
+          if (t < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+        io.unobserve(el);
+      }
+    }, { threshold: 0.5 });
+    counters.forEach((c) => io.observe(c));
+  }
+
+  // ── Pillar card 3D tilt on hover ──
+  const pillars = document.querySelectorAll<HTMLElement>('.pillar');
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reducedMotion) {
+    pillars.forEach((card) => {
+      card.style.transition += ', transform 0.3s ease';
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / rect.width - 0.5;  // -0.5 to 0.5
+        const y = (e.clientY - rect.top) / rect.height - 0.5;
+        card.style.transform = `perspective(600px) rotateY(${x * 6}deg) rotateX(${-y * 6}deg)`;
+      });
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = '';
+      });
+    });
+  }
+</script>
+
 <style>
   /* ─────────────────────── HERO ─────────────────────── */
   .hero {
@@ -294,6 +338,28 @@ const updates: { date: string; title: string; excerpt: string; href?: string }[]
     padding-bottom: 0;
     overflow: hidden;
     isolation: isolate;
+  }
+  .hero__gradient {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    opacity: 0.12;
+    background: linear-gradient(
+      135deg,
+      var(--ws-1) 0%, var(--ws-2) 14%, var(--ws-3) 28%,
+      var(--ws-4) 42%, var(--ws-5) 56%, var(--ws-6) 70%,
+      var(--ws-7) 84%, var(--ws-1) 100%
+    );
+    background-size: 300% 300%;
+    animation: heroGradientShift 20s ease infinite;
+  }
+  @keyframes heroGradientShift {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero__gradient { animation: none; }
   }
   .hero__inner {
     display: grid;

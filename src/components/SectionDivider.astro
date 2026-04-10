@@ -1551,7 +1551,7 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
           c.setAttribute('cy', (cy * yScale).toFixed(1));
           // Enlarge nodes for mobile visibility
           const r = parseFloat(c.getAttribute('r') || '0');
-          c.setAttribute('r', (r * 1.4).toFixed(1));
+          c.setAttribute('r', (r * 1.82).toFixed(1));
         });
         netSvg.querySelectorAll<SVGLineElement>('line').forEach(l => {
           const y1 = parseFloat(l.getAttribute('y1') || '0');
