@@ -230,6 +230,15 @@ const year = new Date().getFullYear();
       height: clamp(1.5rem, 2.8vw, 2.1rem);
       object-fit: contain;
     }
+    /* In dark mode the footer flips to a light bg, so invert the white SVG logo */
+    @media (prefers-color-scheme: dark) {
+      :global(:root:not([data-theme]):not([data-mode="light"])) .institutions__logo {
+        filter: invert(1);
+      }
+    }
+    :global(:root[data-mode="dark"]:not([data-theme])) .institutions__logo {
+      filter: invert(1);
+    }
     .institutions__logo-fallback {
       font-family: var(--f-mono);
       font-size: 0.66rem;
