@@ -1458,7 +1458,7 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
             const r  = wt * maxRadius;
             ev.ring.style.width  = `${r * 2}px`;
             ev.ring.style.height = `${r * 2}px`;
-            ev.ring.style.opacity = Math.max(0, 0.45 * (1 - wt * 0.6)).toFixed(2);
+            ev.ring.style.opacity = Math.max(0, 0.75 * (1 - wt * 0.6)).toFixed(2);
           } else if (ev.ring && dt >= waveCrossDur) {
             if (ev.ring.parentNode) ev.ring.remove();
             ev.ring = null;
@@ -1719,7 +1719,7 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
             const r  = wt * maxRadius;
             w.ring.style.width  = `${r * 2}px`;
             w.ring.style.height = `${r * 2}px`;
-            w.ring.style.opacity = Math.max(0, 0.45 * (1 - wt * 0.6)).toFixed(2);
+            w.ring.style.opacity = Math.max(0, 0.75 * (1 - wt * 0.6)).toFixed(2);
           } else if (w.ring && elapsed >= waveCrossDur) {
             if (w.ring.parentNode) w.ring.remove();
             w.ring = null;
