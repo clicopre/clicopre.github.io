@@ -1,60 +1,50 @@
 ---
-// Live theme switcher. Persists choice in localStorage as `clicopre-theme`.
-// Each theme is a small swatch. Click to apply; keyboard accessible.
-//
-// To hide the switcher in production, wrap the rendered markup in
-//   {import.meta.env.DEV && (...)}
-// For now we ship it so users can browse the alternatives.
-
-const themes = [
-  { id: 'default',    label: 'Warm paper', desc: 'Climate teal · Fraunces',         swatch: '#f4f1e8', accent: '#0a8a7a' },
-  { id: 'dispatch',   label: 'Dispatch',   desc: 'Parchment · Newsreader · clay',   swatch: '#ede6d6', accent: '#a85a3a' },
-  { id: 'frequency',  label: 'Frequency',  desc: 'Bone · Instrument Serif · copper', swatch: '#efe9df', accent: '#b76a5e' },
-  { id: 'cartograph', label: 'Cartograph', desc: 'Stone · Spectral · terracotta',   swatch: '#e8e3d2', accent: '#b8794a' },
-];
+// Minimal light/dark mode toggle. Cycles: light → auto → dark.
+// Persists choice in localStorage as `clicopre-mode`.
+// Shows a sun (light), half-circle (auto), or moon (dark).
 ---
 
-<aside class="theme-switcher" aria-label="Visual theme">
-  <button class="theme-switcher__toggle" type="button" aria-expanded="false" aria-controls="theme-switcher-panel">
-    <span class="theme-switcher__toggle-dot" aria-hidden="true"></span>
-    <span class="theme-switcher__toggle-text">Theme</span>
-  </button>
-  <div class="theme-switcher__panel" id="theme-switcher-panel" hidden>
-    <p class="theme-switcher__head">Appearance</p>
-    <div class="mode-toggle" role="radiogroup" aria-label="Light or dark mode">
-      <button type="button" class="mode-toggle__btn" data-mode="light" aria-pressed="false">Light</button>
-      <button type="button" class="mode-toggle__btn" data-mode="auto" aria-pressed="true">Auto</button>
-      <button type="button" class="mode-toggle__btn" data-mode="dark" aria-pressed="false">Dark</button>
-    </div>
-    <p class="theme-switcher__head" style="margin-top: 0.8rem;">Color theme</p>
-    <ul>
-      {themes.map((t) => (
-        <li>
-          <button
-            type="button"
-            class="theme-switcher__opt"
-            data-theme-id={t.id}
-            aria-pressed="false"
-          >
-            <span class="theme-switcher__opt-swatch" style={`--sw: ${t.swatch}; --ac: ${t.accent};`} aria-hidden="true"></span>
-            <span class="theme-switcher__opt-text">
-              <span class="theme-switcher__opt-label">{t.label}</span>
-              <span class="theme-switcher__opt-desc">{t.desc}</span>
-            </span>
-          </button>
-        </li>
-      ))}
-    </ul>
-    <p class="theme-switcher__foot">Saved to this browser. Reset by reloading in private mode.</p>
-  </div>
-</aside>
+<button
+  class="mode-btn"
+  type="button"
+  aria-label="Toggle light/dark mode"
+  title="Toggle light/dark mode"
+>
+  <!-- Sun icon (light mode) -->
+  <svg class="mode-btn__icon mode-btn__icon--light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="5" />
+    <line x1="12" y1="1" x2="12" y2="3" />
+    <line x1="12" y1="21" x2="12" y2="23" />
+    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+    <line x1="1" y1="12" x2="3" y2="12" />
+    <line x1="21" y1="12" x2="23" y2="12" />
+    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+  </svg>
+  <!-- Auto icon (half sun/moon) -->
+  <svg class="mode-btn__icon mode-btn__icon--auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="5" />
+    <path d="M12 7 A5 5 0 0 1 12 17 Z" fill="currentColor" />
+    <line x1="12" y1="1" x2="12" y2="3" />
+    <line x1="12" y1="21" x2="12" y2="23" />
+    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+    <line x1="1" y1="12" x2="3" y2="12" />
+    <line x1="21" y1="12" x2="23" y2="12" />
+    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+  </svg>
+  <!-- Moon icon (dark mode) -->
+  <svg class="mode-btn__icon mode-btn__icon--dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+  </svg>
+</button>
 
 <script is:inline>
-  // Apply theme + mode as early as possible to avoid a flash.
+  // Apply mode as early as possible to avoid a flash.
   (function () {
     try {
-      var t = localStorage.getItem('clicopre-theme');
-      if (t && t !== 'default') document.documentElement.setAttribute('data-theme', t);
       var m = localStorage.getItem('clicopre-mode');
       if (m && m !== 'auto') document.documentElement.setAttribute('data-mode', m);
     } catch (e) {}
@@ -63,258 +53,92 @@ const themes = [
 
 <script>
   const root = document.documentElement;
-  const wrap = document.querySelector<HTMLElement>('.theme-switcher');
-  const toggle = wrap?.querySelector<HTMLButtonElement>('.theme-switcher__toggle');
-  const panel = wrap?.querySelector<HTMLElement>('.theme-switcher__panel');
-  const opts = Array.from(wrap?.querySelectorAll<HTMLButtonElement>('.theme-switcher__opt') ?? []);
+  const btn = document.querySelector<HTMLButtonElement>('.mode-btn');
+  const modes = ['light', 'auto', 'dark'] as const;
+  type Mode = typeof modes[number];
 
-  const current = (): string => root.getAttribute('data-theme') || 'default';
-
-  const sync = () => {
-    const c = current();
-    opts.forEach((o) => {
-      const isActive = o.dataset.themeId === c;
-      o.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-    });
+  const labels: Record<Mode, string> = {
+    light: 'Light mode — click for auto',
+    auto: 'Auto mode — click for dark',
+    dark: 'Dark mode — click for light',
   };
 
-  const setOpen = (open: boolean) => {
-    if (!panel || !toggle) return;
-    panel.hidden = !open;
-    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-    wrap?.setAttribute('data-open', open ? 'true' : 'false');
+  const getMode = (): Mode => (root.getAttribute('data-mode') as Mode) || 'auto';
+
+  const apply = (m: Mode) => {
+    if (m === 'auto') {
+      root.removeAttribute('data-mode');
+    } else {
+      root.setAttribute('data-mode', m);
+    }
+    try { localStorage.setItem('clicopre-mode', m); } catch (e) {}
+    if (btn) {
+      btn.setAttribute('data-current', m);
+      btn.setAttribute('aria-label', labels[m]);
+      btn.setAttribute('title', labels[m]);
+    }
   };
 
-  toggle?.addEventListener('click', () => {
-    setOpen(panel?.hidden ?? true);
+  btn?.addEventListener('click', () => {
+    const cur = getMode();
+    const next = modes[(modes.indexOf(cur) + 1) % modes.length];
+    apply(next);
   });
 
-  opts.forEach((o) => {
-    o.addEventListener('click', () => {
-      const id = o.dataset.themeId || 'default';
-      if (id === 'default') {
-        root.removeAttribute('data-theme');
-      } else {
-        root.setAttribute('data-theme', id);
-      }
-      try { localStorage.setItem('clicopre-theme', id); } catch (e) {}
-      sync();
-    });
-  });
-
-  // Mode toggle (light / auto / dark)
-  const modeBtns = Array.from(wrap?.querySelectorAll<HTMLButtonElement>('.mode-toggle__btn') ?? []);
-  const currentMode = (): string => root.getAttribute('data-mode') || 'auto';
-  const syncMode = () => {
-    const m = currentMode();
-    modeBtns.forEach((b) => b.setAttribute('aria-pressed', b.dataset.mode === m ? 'true' : 'false'));
-  };
-  modeBtns.forEach((b) => {
-    b.addEventListener('click', () => {
-      const m = b.dataset.mode || 'auto';
-      if (m === 'auto') {
-        root.removeAttribute('data-mode');
-      } else {
-        root.setAttribute('data-mode', m);
-      }
-      try { localStorage.setItem('clicopre-mode', m); } catch (e) {}
-      syncMode();
-    });
-  });
-  syncMode();
-
-  // Close panel on outside click + Escape
-  document.addEventListener('click', (e) => {
-    if (!wrap?.contains(e.target as Node)) setOpen(false);
-  });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') setOpen(false);
-  });
-
-  sync();
+  // Init
+  apply(getMode());
 </script>
 
 <style>
-  .theme-switcher {
+  .mode-btn {
     position: fixed;
     right: 1.2rem;
     bottom: 1.2rem;
     z-index: 80;
-    font-family: var(--f-mono);
-    font-size: 0.7rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  /* The toggle pill */
-  .theme-switcher__toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.55rem;
-    padding: 0.6rem 0.95rem 0.6rem 0.7rem;
-    background: var(--c-bg);
-    border: 1px solid var(--c-line-strong);
-    color: var(--c-ink);
-    cursor: pointer;
-    border-radius: 999px;
-    box-shadow: 0 2px 14px rgba(0, 0, 0, 0.06);
-    transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
-  }
-  .theme-switcher__toggle:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.10);
-  }
-  .theme-switcher__toggle-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--c-teal);
-    box-shadow: 0 0 0 2px var(--c-bg), 0 0 0 3px var(--c-teal-deep);
-  }
-
-  .theme-switcher[data-open="true"] .theme-switcher__toggle {
-    background: var(--c-ink);
-    color: var(--c-bg);
-    border-color: var(--c-ink);
-  }
-
-  /* The panel */
-  .theme-switcher__panel {
-    position: absolute;
-    right: 0;
-    bottom: calc(100% + 0.7rem);
-    width: 286px;
-    background: var(--c-bg);
-    border: 1px solid var(--c-line-strong);
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.10);
-    padding: 1rem 1rem 0.85rem;
-    border-radius: 4px;
-  }
-  .theme-switcher__head {
-    margin: 0 0 0.7rem;
-    font-family: var(--f-mono);
-    font-size: 0.62rem;
-    color: var(--c-ink-muted);
-    letter-spacing: 0.16em;
-  }
-  /* Mode toggle — segmented control */
-  .mode-toggle {
     display: flex;
-    gap: 0;
-    border: 1px solid var(--c-line-strong);
-    border-radius: 3px;
-    overflow: hidden;
-    margin-bottom: 0.5rem;
-  }
-  .mode-toggle__btn {
-    flex: 1;
-    padding: 0.45rem 0;
-    background: transparent;
-    border: none;
-    border-right: 1px solid var(--c-line-strong);
-    color: var(--c-ink-muted);
-    cursor: pointer;
-    font-family: var(--f-mono);
-    font-size: 0.65rem;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    transition: background 0.2s ease, color 0.2s ease;
-  }
-  .mode-toggle__btn:last-child { border-right: none; }
-  .mode-toggle__btn:hover { background: var(--c-bg-alt); color: var(--c-ink); }
-  .mode-toggle__btn[aria-pressed="true"] {
-    background: var(--c-ink);
-    color: var(--c-bg);
-  }
-
-  .theme-switcher__panel ul {
-    list-style: none;
-    margin: 0;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
     padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  .theme-switcher__opt {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    width: 100%;
-    padding: 0.55rem 0.55rem;
-    background: transparent;
-    border: 1px solid transparent;
+    background: var(--c-bg);
+    border: 1px solid var(--c-line-strong);
     color: var(--c-ink);
     cursor: pointer;
-    text-align: left;
-    border-radius: 2px;
-    transition: background 0.2s ease, border-color 0.2s ease;
-    text-transform: none;
-    letter-spacing: 0;
-    font-family: var(--f-sans);
-  }
-  .theme-switcher__opt:hover {
-    background: var(--c-bg-alt);
-    border-color: var(--c-line);
-  }
-  .theme-switcher__opt[aria-pressed="true"] {
-    background: var(--c-bg-alt);
-    border-color: var(--c-ink);
-  }
-
-  .theme-switcher__opt-swatch {
-    width: 28px;
-    height: 28px;
     border-radius: 50%;
-    background: var(--sw);
-    border: 1px solid var(--c-line-strong);
-    position: relative;
-    flex: 0 0 auto;
+    box-shadow: 0 2px 14px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease),
+                background 0.2s ease, border-color 0.2s ease;
   }
-  .theme-switcher__opt-swatch::after {
-    content: "";
-    position: absolute;
-    inset: 6px 6px 6px 16px;
-    background: var(--ac);
-    border-radius: 0 14px 14px 0;
+  .mode-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.14);
+    border-color: var(--c-teal);
   }
-
-  .theme-switcher__opt-text {
-    display: flex;
-    flex-direction: column;
-    gap: 0.05rem;
-    line-height: 1.2;
-    min-width: 0;
-  }
-  .theme-switcher__opt-label {
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: var(--c-ink);
-  }
-  .theme-switcher__opt-desc {
-    font-size: 0.7rem;
-    color: var(--c-ink-muted);
-    font-family: var(--f-mono);
-    letter-spacing: 0.02em;
+  .mode-btn:focus-visible {
+    outline: 2px solid var(--c-teal-deep);
+    outline-offset: 3px;
   }
 
-  .theme-switcher__foot {
-    margin: 0.7rem 0 0;
-    padding-top: 0.6rem;
-    border-top: 1px solid var(--c-line);
-    font-family: var(--f-mono);
-    font-size: 0.58rem;
-    color: var(--c-ink-muted);
-    letter-spacing: 0.08em;
-    text-transform: none;
-    line-height: 1.5;
+  .mode-btn__icon {
+    width: 18px;
+    height: 18px;
+    display: none;
+  }
+
+  /* Show the right icon based on data-current */
+  .mode-btn[data-current="light"] .mode-btn__icon--light,
+  .mode-btn[data-current="auto"] .mode-btn__icon--auto,
+  .mode-btn[data-current="dark"] .mode-btn__icon--dark {
+    display: block;
+  }
+  /* Before JS runs, default to auto */
+  .mode-btn:not([data-current]) .mode-btn__icon--auto {
+    display: block;
   }
 
   @media (max-width: 480px) {
-    .theme-switcher { right: 0.6rem; bottom: 0.6rem; }
-    .theme-switcher__toggle-text { display: none; }
-    .theme-switcher__toggle { padding: 0.55rem; }
-    .theme-switcher__panel { width: calc(100vw - 1.2rem); max-width: 280px; }
+    .mode-btn { right: 0.8rem; bottom: 0.8rem; width: 36px; height: 36px; }
+    .mode-btn__icon { width: 16px; height: 16px; }
   }
 </style>
