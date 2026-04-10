@@ -20,7 +20,13 @@ const themes = [
     <span class="theme-switcher__toggle-text">Theme</span>
   </button>
   <div class="theme-switcher__panel" id="theme-switcher-panel" hidden>
-    <p class="theme-switcher__head">Visual theme</p>
+    <p class="theme-switcher__head">Appearance</p>
+    <div class="mode-toggle" role="radiogroup" aria-label="Light or dark mode">
+      <button type="button" class="mode-toggle__btn" data-mode="light" aria-pressed="false">Light</button>
+      <button type="button" class="mode-toggle__btn" data-mode="auto" aria-pressed="true">Auto</button>
+      <button type="button" class="mode-toggle__btn" data-mode="dark" aria-pressed="false">Dark</button>
+    </div>
+    <p class="theme-switcher__head" style="margin-top: 0.8rem;">Color theme</p>
     <ul>
       {themes.map((t) => (
         <li>
@@ -44,11 +50,13 @@ const themes = [
 </aside>
 
 <script is:inline>
-  // Apply theme as early as possible to avoid a flash of the wrong palette.
+  // Apply theme + mode as early as possible to avoid a flash.
   (function () {
     try {
       var t = localStorage.getItem('clicopre-theme');
       if (t && t !== 'default') document.documentElement.setAttribute('data-theme', t);
+      var m = localStorage.getItem('clicopre-mode');
+      if (m && m !== 'auto') document.documentElement.setAttribute('data-mode', m);
     } catch (e) {}
   })();
 </script>
@@ -93,6 +101,27 @@ const themes = [
       sync();
     });
   });
+
+  // Mode toggle (light / auto / dark)
+  const modeBtns = Array.from(wrap?.querySelectorAll<HTMLButtonElement>('.mode-toggle__btn') ?? []);
+  const currentMode = (): string => root.getAttribute('data-mode') || 'auto';
+  const syncMode = () => {
+    const m = currentMode();
+    modeBtns.forEach((b) => b.setAttribute('aria-pressed', b.dataset.mode === m ? 'true' : 'false'));
+  };
+  modeBtns.forEach((b) => {
+    b.addEventListener('click', () => {
+      const m = b.dataset.mode || 'auto';
+      if (m === 'auto') {
+        root.removeAttribute('data-mode');
+      } else {
+        root.setAttribute('data-mode', m);
+      }
+      try { localStorage.setItem('clicopre-mode', m); } catch (e) {}
+      syncMode();
+    });
+  });
+  syncMode();
 
   // Close panel on outside click + Escape
   document.addEventListener('click', (e) => {
@@ -168,6 +197,37 @@ const themes = [
     color: var(--c-ink-muted);
     letter-spacing: 0.16em;
   }
+  /* Mode toggle — segmented control */
+  .mode-toggle {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--c-line-strong);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+  }
+  .mode-toggle__btn {
+    flex: 1;
+    padding: 0.45rem 0;
+    background: transparent;
+    border: none;
+    border-right: 1px solid var(--c-line-strong);
+    color: var(--c-ink-muted);
+    cursor: pointer;
+    font-family: var(--f-mono);
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+  .mode-toggle__btn:last-child { border-right: none; }
+  .mode-toggle__btn:hover { background: var(--c-bg-alt); color: var(--c-ink); }
+  .mode-toggle__btn[aria-pressed="true"] {
+    background: var(--c-ink);
+    color: var(--c-bg);
+  }
+
   .theme-switcher__panel ul {
     list-style: none;
     margin: 0;
