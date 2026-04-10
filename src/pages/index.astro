@@ -311,9 +311,71 @@ const updates: { date: string; title: string; excerpt: string; href?: string }[]
     counters.forEach((c) => io.observe(c));
   }
 
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ── Magnetic cursor on CTA buttons ──
+  if (!reducedMotion) {
+    document.querySelectorAll<HTMLElement>('.hero__cta .btn').forEach((btn) => {
+      btn.addEventListener('mousemove', (e) => {
+        const rect = btn.getBoundingClientRect();
+        const x = e.clientX - rect.left - rect.width / 2;
+        const y = e.clientY - rect.top - rect.height / 2;
+        btn.style.transform = `translate(${x * 0.15}px, ${y * 0.15}px)`;
+      });
+      btn.addEventListener('mouseleave', () => {
+        btn.style.transform = '';
+      });
+    });
+  }
+
+  // ── Parallax on section dividers ──
+  if (!reducedMotion) {
+    const dividers = document.querySelectorAll<HTMLElement>('[class*="sd-"][class*="__plot"], [class*="sd-"][class*="__globe"]');
+    if (dividers.length) {
+      let ticking = false;
+      window.addEventListener('scroll', () => {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(() => {
+          const vh = window.innerHeight;
+          dividers.forEach((el) => {
+            const rect = el.getBoundingClientRect();
+            if (rect.bottom > 0 && rect.top < vh) {
+              const center = (rect.top + rect.height / 2) / vh - 0.5; // -0.5 to 0.5
+              el.style.transform = `translateY(${center * -12}px)`;
+            }
+          });
+          ticking = false;
+        });
+      }, { passive: true });
+    }
+  }
+
+  // ── Typing reveal on hero title italic ──
+  if (!reducedMotion) {
+    const em = document.querySelector<HTMLElement>('.hero__title em');
+    if (em) {
+      const text = em.textContent || '';
+      em.textContent = '';
+      em.style.borderRight = '2px solid var(--c-teal)';
+      let i = 0;
+      const type = () => {
+        if (i < text.length) {
+          em.textContent = text.slice(0, i + 1);
+          i++;
+          setTimeout(type, 45 + Math.random() * 30);
+        } else {
+          // Remove cursor after typing
+          setTimeout(() => { em.style.borderRight = 'none'; }, 600);
+        }
+      };
+      // Start after reveal animation completes
+      setTimeout(type, 800);
+    }
+  }
+
   // ── Pillar card 3D tilt on hover ──
   const pillars = document.querySelectorAll<HTMLElement>('.pillar');
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (!reducedMotion) {
     pillars.forEach((card) => {
       card.style.transition += ', transform 0.3s ease';
@@ -409,8 +471,28 @@ const updates: { date: string; title: string; excerpt: string; href?: string }[]
   }
   .hero__title em {
     font-style: italic;
-    color: var(--c-teal-deep);
     font-variation-settings: "opsz" 144, "SOFT" 100, "WONK" 1;
+    background: linear-gradient(135deg, var(--c-teal-deep), var(--c-teal), var(--c-amber), var(--c-teal-deep));
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: heroTextGradient 8s ease infinite;
+  }
+  @keyframes heroTextGradient {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero__title em {
+      animation: none;
+      background: none;
+      -webkit-background-clip: unset;
+      background-clip: unset;
+      -webkit-text-fill-color: var(--c-teal-deep);
+      color: var(--c-teal-deep);
+    }
   }
   .hero__lede {
     font-size: var(--step-1);
