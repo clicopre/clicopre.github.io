@@ -1119,7 +1119,7 @@ section.deep { background: var(--c-bg-deep); }
 .sd-network__wave-ring {
   position: absolute;
   border-radius: 50%;
-  border: 1.5px solid currentColor;
+  border: 2.5px solid currentColor;
   pointer-events: none;
   transform: translate(-50%, -50%);
   animation: netWaveExpand 7s linear forwards;
@@ -1256,7 +1256,7 @@ section.deep { background: var(--c-bg-deep); }
 .sd-nf-cross-ring {
   position: absolute;
   border-radius: 50%;
-  border: 1.5px solid;
+  border: 2.5px solid;
   pointer-events: none;
   transform: translate(-50%, -50%);
   width: 0;
