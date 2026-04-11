@@ -77,25 +77,27 @@ const contourPatternCountries: number[][] = Array.from(
     ),
 );
 
-// y-axis is 0–100; the SVG viewBox uses 0–100 for y so values map directly.
+// y-axis uses 0–60 to match the network plot (netH = 60), so the contour
+// paths have the same coordinate density and draw at the same visual speed.
 const cW = 1200;
-const cH = 100;
+const cH = 60;
 const segs = 220;
-const contourCap = 96; // no peak ever reaches the 100% line
+const contourCap = 100; // peaks can reach the top line
 
 // One path per (pattern, country-in-pattern). The shape is seeded by
 // the country's index (so each country has its own characteristic
 // silhouette) and varied by the pattern index.
-type ContourLine = { d: string; countryIdx: number; thin: boolean };
+type ContourLine = { d: string; countryIdx: number; thin: boolean; len: number };
 const contourPatterns: ContourLine[][] = contourPatternCountries.map((countryIndices, p) => {
   return countryIndices.map((countryIdx, j) => {
     const row = countryIdx;
     const peaks = [
-      { pos: cW * (0.08 + 0.05 * ((row + p)     % 5)), amp: 58 + ((row * 11 + p * 17) % 30), sig: cW * 0.030 },
-      { pos: cW * (0.30 + 0.06 * ((row + p * 2) % 4)), amp: 50 + ((row * 7  + p * 13) % 38), sig: cW * 0.038 },
-      { pos: cW * (0.55 + 0.05 * ((row + p + 1) % 4)), amp: 64 + ((row * 5  + p * 19) % 30), sig: cW * 0.034 },
-      { pos: cW * (0.82 + 0.04 * ((row + p * 3) % 4)), amp: 56 + ((row * 13 + p * 11) % 36), sig: cW * 0.032 },
+      { pos: cW * (0.08 + 0.05 * ((row + p)     % 5)), amp: 80 + ((row * 11 + p * 17) % 40), sig: cW * 0.030 },
+      { pos: cW * (0.30 + 0.06 * ((row + p * 2) % 4)), amp: 70 + ((row * 7  + p * 13) % 50), sig: cW * 0.038 },
+      { pos: cW * (0.55 + 0.05 * ((row + p + 1) % 4)), amp: 85 + ((row * 5  + p * 19) % 35), sig: cW * 0.034 },
+      { pos: cW * (0.82 + 0.04 * ((row + p * 3) % 4)), amp: 75 + ((row * 13 + p * 11) % 45), sig: cW * 0.032 },
     ];
+    const coords: { x: number; y: number }[] = [];
     const pts: string[] = [];
     for (let i = 0; i <= segs; i++) {
       const x = (i / segs) * cW;
@@ -110,21 +112,35 @@ const contourPatterns: ContourLine[][] = contourPatternCountries.map((countryInd
       }
       v = Math.max(0, Math.min(contourCap, v));
       const y = cH - v * (cH / 100);
+      coords.push({ x, y });
       pts.push(`${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`);
     }
+    // Compute actual path length so dasharray matches exactly (no hold, no gap)
+    let len = 0;
+    for (let i = 1; i < coords.length; i++) {
+      const dx = coords[i].x - coords[i - 1].x;
+      const dy = coords[i].y - coords[i - 1].y;
+      len += Math.sqrt(dx * dx + dy * dy);
+    }
+    len = Math.ceil(len); // round up to be safe
     // Vary thin/normal weight per loop so each pattern shows a different mix
     const thin = ((p * 3 + j * 7) % 6) < 3;
-    return { d: pts.join(' '), countryIdx, thin };
+    return { d: pts.join(' '), countryIdx, thin, len };
   });
 });
 
-// Each pattern: 30s draw + a brief hold (4s) at the end. Then
-// the next pattern starts. The whole loop strings the 10 patterns
-// together back-to-back.
-const contourDrawDur = 30;
+// Synchronized with newsfeed/network: all lines in a pattern draw
+// together over waveCrossDur (14s), timed to match the soundwave.
+// Each pattern fires every dotInterval (10s).
+const contourDrawDur = 14;       // matches waveCrossDur
 const contourHoldDur = 0;
-const contourPatternDur = contourDrawDur + contourHoldDur; // 190s
-const contourCycleDur = contourPatternDur * contourPatternCount; // 1900s
+const contourPatternDur = contourDrawDur + contourHoldDur;
+const contourCycleDur = contourPatternDur * contourPatternCount;
+// Max path length across all contour lines — used for dasharray so every
+// line draws at a consistent speed with no hold and no gap.
+const contourMaxLen = Math.ceil(
+  Math.max(...contourPatterns.flat().map((l) => l.len))
+);
 // Stops (as fractions of the whole cycle) for the per-path keyframe.
 const contourDrawStop = (contourDrawDur / contourCycleDur * 100).toFixed(4);
 const contourHoldStop = (contourPatternDur / contourCycleDur * 100).toFixed(4);
@@ -407,22 +423,32 @@ const netGlyphs = Array.from({ length: 30 }, (_, i) => {
 
 // Network globe dots — 10 positions cycling every ~8s. Each flash
 // sends a soundwave across the network graph, triggering reactions.
+// Each dot has a topic → colour (same palette as nfThemeColors).
+// Colours inlined here because nfThemeColors is defined later in the file.
+const netTopicColors: Record<string, string> = {
+  news:     '#0e1d28',
+  finance:  '#2c5d8a',
+  weather:  '#b8401f',
+  media:    '#6b3fa0',
+  health:   '#0a8a7a',
+  sports:   '#c9722b',
+  culture:  '#8b3a4f',
+};
 const netGlobeDots = [
-  { lat: 51.5, lon: -0.1 },   // London
-  { lat: 40.7, lon: -74.0 },  // New York
-  { lat: 48.9, lon: 2.3 },    // Paris
-  { lat: 35.7, lon: 139.7 },  // Tokyo
-  { lat: -22.9, lon: -43.2 }, // Rio
-  { lat: 38.9, lon: -77.0 },  // Washington
-  { lat: 50.1, lon: 8.7 },    // Frankfurt
-  { lat: -33.9, lon: 18.4 },  // Cape Town
-  { lat: 37.6, lon: 127.0 },  // Seoul
-  { lat: 46.2, lon: 6.1 },    // Geneva
-].map((d, i) => ({
+  { lat: 51.5, lon: -0.1,   topic: 'news' },     // London
+  { lat: 40.7, lon: -74.0,  topic: 'finance' },   // New York
+  { lat: 48.9, lon: 2.3,    topic: 'weather' },   // Paris
+  { lat: 35.7, lon: 139.7,  topic: 'media' },     // Tokyo
+  { lat: -22.9, lon: -43.2, topic: 'sports' },    // Rio
+  { lat: 38.9, lon: -77.0,  topic: 'finance' },   // Washington
+  { lat: 50.1, lon: 8.7,    topic: 'finance' },   // Frankfurt
+  { lat: -33.9, lon: 18.4,  topic: 'news' },      // Cape Town
+  { lat: 37.6, lon: 127.0,  topic: 'health' },    // Seoul
+  { lat: 46.2, lon: 6.1,    topic: 'weather' },   // Geneva
+].map((d) => ({
   lat: (d.lat / 180) * Math.PI,
   lon: (d.lon / 180) * Math.PI,
-  color: ['#2c5d8a', '#b8401f', '#0a8a7a', '#6b3fa0', '#c9722b',
-          '#8b3a4f', '#0e1d28', '#5a8db5', '#c44535', '#4d4d8a'][i],
+  color: netTopicColors[d.topic] || netTopicColors.news,
 }));
 const netGlobeDotsJSON = JSON.stringify(netGlobeDots);
 const netGlyphDataJSON = JSON.stringify(netGlyphs.map(g => ({
@@ -738,7 +764,7 @@ const nfPlaces: { lat: number; lon: number }[] = [
 
 // Dots are driven by client-side JS so they can rotate with the globe,
 // disappear behind the horizon, and spawn expanding soundwave rings.
-const nfTickerDur = 180; // slower: each of 40 items appears every ~4.5s
+const nfTickerDur = 280; // slower: each of 40 items appears every ~7s
 const nfDotData = nfPlaces.map((d, i) => ({
   lat: (d.lat / 180) * Math.PI,
   lon: (d.lon / 180) * Math.PI,
@@ -755,7 +781,7 @@ const nfDotDataJSON = JSON.stringify(nfDotData);
 //   • right edge → path curves rightward (matching globe outline)
 // Each meridian is visible during the front-hemisphere pass (0-50%
 // of its cycle) and hidden during the back pass (50-100%).
-const nfSpinDur = 30; // seconds for one full rotation (matched to slower ticker)
+const nfSpinDur = 45; // seconds for one full rotation (matched to slower ticker)
 const nfMeridianCount = 8;
 const nfGTop = nfGlobeCy - nfGlobeR + 1; // 6
 const nfGBot = nfGlobeCy + nfGlobeR - 1; // 84
@@ -788,7 +814,7 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
       )}
 
       {variant === 'contour' && (
-        <div class="sd-contour" style={`--contour-cycle:${contourCycleDur}s; --contour-draw-stop:${contourDrawStop}%; --contour-hold-stop:${contourHoldStop}%`}>
+        <div class="sd-contour" style={`--contour-cycle:${contourCycleDur}s; --contour-draw-stop:${contourDrawStop}%; --contour-hold-stop:${contourHoldStop}%; --contour-len:${contourMaxLen}`}>
           <div class="sd-contour__chart">
             <div class="sd-contour__yaxis-wrap" aria-hidden="true">
               <span class="sd-contour__yaxis-label">ENGAGEMENT</span>
@@ -802,8 +828,8 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
               <svg viewBox={`0 0 ${cW} ${cH}`} preserveAspectRatio="none">
                 <g class="sd-contour__grid">
                   <line x1="0" y1="0"   x2={cW} y2="0"   />
-                  <line x1="0" y1="50"  x2={cW} y2="50"  />
-                  <line x1="0" y1="100" x2={cW} y2="100" />
+                  <line x1="0" y1={cH / 2}  x2={cW} y2={cH / 2}  />
+                  <line x1="0" y1={cH} x2={cW} y2={cH} />
                 </g>
                 {contourPatterns.map((lines, p) => (
                   <g class="sd-contour__pattern" style={`animation-delay:${p * contourPatternDur}s`}>
@@ -836,6 +862,13 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
             </ul>
             <span class="sd-contour__time" aria-hidden="true">TIME</span>
           </div>
+          {/* Stroke dash values for JS-driven draw */}
+          <style set:html={`
+            .sd-contour__path {
+              stroke-dasharray: ${contourMaxLen};
+              stroke-dashoffset: ${contourMaxLen};
+            }
+          `} />
         </div>
       )}
 
@@ -1302,14 +1335,14 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
     const count    = dots.length;
 
     // ── Timing ──
-    const waveCrossDur = 9.0;    // seconds for wave to cross full container
-    const dotPulseSec  = 2.5;
-    const revealSec    = 3.0;
-    const holdSec      = 3.0;
-    const fadeSec      = 0.8;
-    const gapSec       = 0;
-    const newsDur      = revealSec + holdSec + fadeSec; // 6.8s
-    const dotInterval  = newsDur + gapSec;              // 6.8s
+    const waveCrossDur = 14.0;   // seconds for wave to cross full container
+    const dotPulseSec  = 3.5;
+    const revealSec    = 4.0;
+    const holdSec      = 4.5;
+    const fadeSec      = 1.0;
+    const gapSec       = 0.5;
+    const newsDur      = revealSec + holdSec + fadeSec; // 9.5s
+    const dotInterval  = newsDur + gapSec;              // 10s
 
     // ── Ticker items ──
     const tickerEl = nfContainer.querySelector<HTMLElement>('.sd-newsfeed__ticker');
@@ -1384,6 +1417,9 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
             const screenX = svgOffX + svgX * svgScale;
             const screenY = svgOffY + svgY * svgScale;
 
+            // Event colour from the dot's topic (set at build time)
+            const evtColor = dots[chosen].color;
+
             // Create cross-container wave ring
             let ring: HTMLDivElement | null = null;
             if (overlay) {
@@ -1391,18 +1427,21 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
               ring.className = 'sd-nf-cross-ring';
               ring.style.left = `${screenX}px`;
               ring.style.top  = `${screenY}px`;
-              ring.style.borderColor = d.color;
+              ring.style.borderColor = evtColor;
               overlay.appendChild(ring);
             }
 
             queue.push({
               idx: chosen, fire: t,
               screenX, screenY,
-              front: true, color: d.color, ring,
+              front: true, color: evtColor, ring,
               newsTriggered: false,
             });
             nextIdx  = (chosen + 1) % count;
             nextFire = t + dotInterval;
+
+            // Broadcast to network so it fires at the same instant
+            window.dispatchEvent(new CustomEvent('clicopre-wave', { detail: { color: evtColor } }));
           }
         }
 
@@ -1445,7 +1484,7 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
             const depth = cosLon > 0 ? 0.7 + 0.3 * cosLon : 0.15;
             const el  = dotEls[ev.idx];
             if (el) {
-              el.setAttribute('fill', d.color);
+              el.setAttribute('fill', ev.color);
               el.setAttribute('opacity', (env * depth).toFixed(2));
               el.setAttribute('r', (3.0 + env * 0.8).toFixed(1));
             }
@@ -1471,6 +1510,7 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
           const distToContent = Math.max(0, contentLeft - ev.screenX);
           if (!ev.newsTriggered && waveFront >= distToContent && dt > 0) {
             ev.newsTriggered = true;
+            // Source label colour is already set at build time from the topic
           }
           const el = items[ev.idx];
           if (el && ev.newsTriggered) {
@@ -1509,6 +1549,100 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
 </script>
 
 <script>
+  // ── Contour: JS-driven draw synced to clicopre-wave events ──
+  const contourEl = document.querySelector<HTMLElement>('.sd-contour');
+  if (contourEl) {
+    const patterns = Array.from(contourEl.querySelectorAll<SVGGElement>('.sd-contour__pattern'));
+    const maxLen = parseInt(getComputedStyle(contourEl).getPropertyValue('--contour-len') || '1300', 10);
+
+    // Dynamically compute drawDur so the contour line reaches the right
+    // edge at the same instant the soundwave front does.
+    // Wave: originates at the newsfeed globe center, expands at
+    //   speed = maxRadius / 14  where maxRadius = nfWidth × 1.5
+    // Time for wave to reach the right edge = (nfWidth − globeX) / speed.
+    // Contour must draw its full width in that same time.
+    let drawDur = 14.0 / 1.5;  // fallback ≈ 9.33s
+    const nfGlobe = document.querySelector<HTMLElement>('.sd-newsfeed__globe');
+    const nfBox   = nfGlobe?.closest<HTMLElement>('.sd-newsfeed');
+    if (nfGlobe && nfBox) {
+      const gRect = nfGlobe.getBoundingClientRect();
+      const nRect = nfBox.getBoundingClientRect();
+      const globeCenterX = gRect.left + gRect.width / 2 - nRect.left;
+      const nfW = nRect.width;
+      const maxRadius = nfW * 1.5;
+      const waveSpeed = maxRadius / 14.0;           // px / s
+      const distToRight = nfW - globeCenterX;
+      drawDur = distToRight / waveSpeed;             // ≈ 8–9 s
+    }
+
+    const fadeDur = 0.6;
+    let nextPattern = 0;
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Active draws — each entry is cleaned up after fade
+    type ContourDraw = { patternIdx: number; t0: number; fading: boolean };
+    const active: ContourDraw[] = [];
+
+    if (!reducedMotion) {
+      window.addEventListener('clicopre-wave', () => {
+        const pi = nextPattern % patterns.length;
+        const paths = patterns[pi].querySelectorAll<SVGPathElement>('.sd-contour__path');
+        // Reset
+        paths.forEach(p => {
+          p.style.transition = '';
+          p.style.opacity = '1';
+          p.style.strokeDashoffset = `${maxLen}`;
+        });
+        active.push({ patternIdx: pi, t0: performance.now() / 1000, fading: false });
+        nextPattern++;
+      });
+
+      (function tick() {
+        const t = performance.now() / 1000;
+        for (let i = active.length - 1; i >= 0; i--) {
+          const d = active[i];
+          const dt = t - d.t0;
+          const paths = patterns[d.patternIdx].querySelectorAll<SVGPathElement>('.sd-contour__path');
+
+          if (dt < drawDur) {
+            // Drawing phase — move dashoffset from maxLen → 0
+            const frac = dt / drawDur;
+            const offset = maxLen * (1 - frac);
+            paths.forEach(p => {
+              p.style.strokeDashoffset = offset.toFixed(1);
+            });
+          } else if (!d.fading) {
+            // Draw complete — start fade
+            d.fading = true;
+            paths.forEach(p => {
+              p.style.strokeDashoffset = '0';
+              p.style.transition = `opacity ${fadeDur}s ease-out`;
+              p.style.opacity = '0';
+            });
+          } else if (dt > drawDur + fadeDur + 0.1) {
+            // Fade done — clean up
+            paths.forEach(p => {
+              p.style.transition = '';
+              p.style.strokeDashoffset = `${maxLen}`;
+            });
+            active.splice(i, 1);
+          }
+        }
+        requestAnimationFrame(tick);
+      })();
+    } else {
+      // Reduced motion: show first pattern statically
+      const paths = patterns[0]?.querySelectorAll<SVGPathElement>('.sd-contour__path');
+      if (paths) paths.forEach(p => {
+        p.style.opacity = '1';
+        p.style.strokeDashoffset = '0';
+      });
+    }
+  }
+</script>
+
+<script>
   // ── Network globe: spinning dots → cross-element soundwave → glyph reactions
   const netFull = document.querySelector<HTMLElement>('.sd-network-full');
   if (netFull) {
@@ -1527,9 +1661,8 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
     const plotEl  = netFull.querySelector<HTMLElement>('.sd-network__plot');
 
     const count = dots.length;
-    const pulseSec = 2.5;
-    const waveCrossDur = 9.0;         // seconds for wave to cross network (matches newsfeed)
-    const dotInterval  = 6.8;         // seconds between dot firings
+    const pulseSec = 3.5;
+    const waveCrossDur = 14.0;        // seconds for wave to cross network (matches newsfeed)
 
     // ── Mobile: rescale network SVG viewBox so circles stay circular ──
     const isMobile = window.matchMedia('(max-width: 600px)').matches;
@@ -1605,15 +1738,23 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
     };
     const activeWaves: ActiveWave[] = [];
 
-    let nextIdx  = 0;
-    let nextFire = performance.now() / 1000;
+    // Network follows the newsfeed's timing via a shared event bus.
+    // Pending fires queued here are consumed on the next rAF tick.
+    let nextIdx = 0;
+    const pendingFires: string[] = [];  // topic colors from newsfeed
+    window.addEventListener('clicopre-wave', ((e: CustomEvent) => {
+      pendingFires.push(e.detail.color);
+    }) as EventListener);
 
     (function tick() {
       const t = performance.now() / 1000;
       const spinAngle = (t / spinDur) * Math.PI * 2;
 
-      // ── Fire next dot? (front hemisphere only, skip back ones) ──
-      if (t >= nextFire) {
+      // ── Fire dot when newsfeed broadcasts an event ──
+      while (pendingFires.length > 0) {
+        const evtColor = pendingFires.shift()!;
+
+        // Pick a front-hemisphere dot (round-robin)
         let chosen = -1;
         for (let attempt = 0; attempt < count; attempt++) {
           const ci = (nextIdx + attempt) % count;
@@ -1621,48 +1762,44 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
           const lon = d.lon + spinAngle;
           if (Math.cos(lon) > 0) { chosen = ci; break; }
         }
+        if (chosen < 0) continue; // all on back — skip
 
-        if (chosen < 0) {
-          nextFire = t + 0.15;
-        } else {
-          // Record fire time for this dot
-          (dots[chosen] as any)._fireTime = t;
-          nextIdx  = (chosen + 1) % count;
-          nextFire = t + dotInterval;
+        // Record fire time + colour for this dot
+        (dots[chosen] as any)._fireTime = t;
+        (dots[chosen] as any)._fireColor = evtColor;
+        nextIdx = (chosen + 1) % count;
 
-          // Spawn cross-element wave ring
-          const d = dots[chosen];
-          const lon = d.lon + spinAngle;
-          const x = cx + R * 0.82 * Math.cos(d.lat) * Math.sin(lon);
-          const y = cy - R * 0.82 * Math.sin(d.lat);
+        // Spawn cross-element wave ring
+        const d = dots[chosen];
+        const lon = d.lon + spinAngle;
+        const x = cx + R * 0.82 * Math.cos(d.lat) * Math.sin(lon);
+        const y = cy - R * 0.82 * Math.sin(d.lat);
 
-          if (overlay) {
-            const globeSvg = netFull.querySelector('.sd-network-full__globe svg');
-            const svgRect = globeSvg?.getBoundingClientRect();
-            const fullRect = netFull.getBoundingClientRect();
-            if (svgRect && fullRect) {
-              const svgScale = svgRect.width / 90;
-              const dotScreenX = svgRect.left + x * svgScale - fullRect.left;
-              const dotScreenY = svgRect.top + y * svgScale - fullRect.top;
+        if (overlay) {
+          const globeSvg = netFull.querySelector('.sd-network-full__globe svg');
+          const svgRect = globeSvg?.getBoundingClientRect();
+          const fullRect = netFull.getBoundingClientRect();
+          if (svgRect && fullRect) {
+            const svgScale = svgRect.width / 90;
+            const dotScreenX = svgRect.left + x * svgScale - fullRect.left;
+            const dotScreenY = svgRect.top + y * svgScale - fullRect.top;
 
-              // JS-driven ring (same approach as newsfeed)
-              const ring = document.createElement('div');
-              ring.className = 'sd-nf-cross-ring';
-              ring.style.left = `${dotScreenX}px`;
-              ring.style.top  = `${dotScreenY}px`;
-              ring.style.borderColor = d.color;
-              overlay.appendChild(ring);
+            const ring = document.createElement('div');
+            ring.className = 'sd-nf-cross-ring';
+            ring.style.left = `${dotScreenX}px`;
+            ring.style.top  = `${dotScreenY}px`;
+            ring.style.borderColor = evtColor;
+            overlay.appendChild(ring);
 
-              activeWaves.push({
-                startTime: t,
-                originXPx: dotScreenX,
-                originYPx: dotScreenY,
-                color: d.color,
-                dotIdx: chosen,
-                ring,
-                triggered: new Array(glyphData.length).fill(false),
-              });
-            }
+            activeWaves.push({
+              startTime: t,
+              originXPx: dotScreenX,
+              originYPx: dotScreenY,
+              color: evtColor,
+              dotIdx: chosen,
+              ring,
+              triggered: new Array(glyphData.length).fill(false),
+            });
           }
         }
       }
@@ -1679,9 +1816,10 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
         if (dotEl) {
           dotEl.setAttribute('cx', x.toFixed(1));
           dotEl.setAttribute('cy', y.toFixed(1));
-          dotEl.setAttribute('fill', d.color);
 
           const fireT = (d as any)._fireTime;
+          const fireColor = (d as any)._fireColor || d.color;
+          dotEl.setAttribute('fill', fireColor);
           const dt = fireT ? t - fireT : Infinity;
           if (dt < pulseSec) {
             const tN = dt / pulseSec;

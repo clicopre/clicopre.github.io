@@ -503,7 +503,7 @@ section.deep { background: var(--c-bg-deep); }
   border-color: var(--c-line-strong);
   color: var(--c-ink);
 }
-.btn-ghost:hover { background: var(--c-ink); border-color: var(--c-ink); color: var(--c-bg); }
+.btn-ghost:hover { background: var(--c-teal-deep); border-color: var(--c-teal-deep); color: var(--c-bg); }
 .btn:focus-visible {
   outline: 2px solid var(--c-teal-deep);
   outline-offset: 4px;
@@ -852,23 +852,10 @@ section.deep { background: var(--c-bg-deep); }
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
   opacity: 0;
-  stroke-dasharray: 1300;
-  stroke-dashoffset: 1300;
-  animation: contourCycle var(--contour-cycle) linear infinite;
 }
-/* Thin variant: narrower stroke, slightly lower opacity */
+/* Thin variant: narrower stroke */
 .sd-contour__path--thin {
   stroke-width: 0.7;
-  opacity: 0;
-}
-/* Each pattern occupies 30s of a 300s loop (10 patterns × 30s):
-   - 0% → 10%       line draw left → right (30s)
-   - 10% → 100%     invisible until next iteration                       */
-@keyframes contourCycle {
-  0%        { opacity: 1; stroke-dashoffset: 1300; }
-  10%       { opacity: 1; stroke-dashoffset: 0;    }
-  10.0001%  { opacity: 0; stroke-dashoffset: 1300; }
-  100%      { opacity: 0; stroke-dashoffset: 1300; }
 }
 .sd-contour__footer {
   grid-column: 2;
@@ -1147,7 +1134,7 @@ section.deep { background: var(--c-bg-deep); }
   border: 2.5px solid currentColor;
   pointer-events: none;
   transform: translate(-50%, -50%);
-  animation: netWaveExpand 7s linear forwards;
+  animation: netWaveExpand 11s linear forwards;
 }
 @keyframes netWaveExpand {
   0%   { width: 8px; height: 8px; opacity: 0.85; }
@@ -1339,6 +1326,11 @@ section.deep { background: var(--c-bg-deep); }
     font-size: 0.72rem;
   }
 
+  /* Contour: match network height on mobile */
+  .sd-contour__plot {
+    height: 80px;
+  }
+
   /* Rollcall: taller container, JS rescales viewBox */
   .sd-rollcall__plot {
     height: 80px;
@@ -1356,7 +1348,7 @@ section.deep { background: var(--c-bg-deep); }
   .sd-newsfeed__ticker,
   .sd-network__wave-ring,
   .sd-nf-cross-ring { animation: none !important; }
-  .sd-contour__path { stroke-dashoffset: 0; stroke-dasharray: 1300; }
+  .sd-contour__path { stroke-dashoffset: 0; stroke-dasharray: none; }
   .sd-rollcall__mp animate,
   .sd-rollcall__wave animate { display: none; }
 }

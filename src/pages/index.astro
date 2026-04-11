@@ -136,7 +136,6 @@ const updates: { date: string; title: string; excerpt: string; href?: string }[]
             <ul class="pillar__keys">
               {p.keys.map((k) => <li>{k}</li>)}
             </ul>
-            <span class="pillar__arrow" aria-hidden="true">→</span>
           </article>
         ))}
       </div>
@@ -313,21 +312,6 @@ const updates: { date: string; title: string; excerpt: string; href?: string }[]
 
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // ── Magnetic cursor on CTA buttons ──
-  if (!reducedMotion) {
-    document.querySelectorAll<HTMLElement>('.hero__cta .btn').forEach((btn) => {
-      btn.addEventListener('mousemove', (e) => {
-        const rect = btn.getBoundingClientRect();
-        const x = e.clientX - rect.left - rect.width / 2;
-        const y = e.clientY - rect.top - rect.height / 2;
-        btn.style.transform = `translate(${x * 0.15}px, ${y * 0.15}px)`;
-      });
-      btn.addEventListener('mouseleave', () => {
-        btn.style.transform = '';
-      });
-    });
-  }
-
   // ── Parallax on section dividers ──
   if (!reducedMotion) {
     const dividers = document.querySelectorAll<HTMLElement>('[class*="sd-"][class*="__plot"], [class*="sd-"][class*="__globe"]');
@@ -471,28 +455,8 @@ const updates: { date: string; title: string; excerpt: string; href?: string }[]
   }
   .hero__title em {
     font-style: italic;
+    color: var(--c-teal-deep);
     font-variation-settings: "opsz" 144, "SOFT" 100, "WONK" 1;
-    background: linear-gradient(135deg, var(--c-teal-deep), var(--c-teal), var(--c-amber), var(--c-teal-deep));
-    background-size: 300% 100%;
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: heroTextGradient 8s ease infinite;
-  }
-  @keyframes heroTextGradient {
-    0%   { background-position: 0% 50%; }
-    50%  { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .hero__title em {
-      animation: none;
-      background: none;
-      -webkit-background-clip: unset;
-      background-clip: unset;
-      -webkit-text-fill-color: var(--c-teal-deep);
-      color: var(--c-teal-deep);
-    }
   }
   .hero__lede {
     font-size: var(--step-1);
