@@ -140,7 +140,11 @@ const contourPatterns: ContourLine[][] = contourPatternCountries.map((countryInd
       let v = bl +
         Math.sin(x * 0.010 + row * 1.3 + p * 0.9) * 1.0 +
         Math.sin(x * 0.027 + row * 0.7 + p * 1.7) * 0.6 +
-        Math.sin(x * 0.061 + row * 2.1 + p * 0.4) * 0.3;
+        Math.sin(x * 0.061 + row * 2.1 + p * 0.4) * 0.3 +
+        // High-frequency jiggle — small noisy oscillations
+        Math.sin(x * 0.19 + row * 3.7 + p * 2.3) * 1.4 +
+        Math.sin(x * 0.31 + row * 5.1 + p * 1.1) * 0.9 +
+        Math.sin(x * 0.53 + row * 7.3 + p * 4.7) * 0.5;
       for (const pk of peaks) {
         const d = x - pk.pos;
         v += pk.amp * Math.exp(-(d * d) / (2 * pk.sig * pk.sig));
@@ -873,7 +877,8 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
                         d={line.d}
                         stroke={contourCountries[line.countryIdx].color}
                         class={`sd-contour__path${line.thin ? ' sd-contour__path--thin' : ''}`}
-                        style={`animation-delay:${p * contourPatternDur}s`}
+                        data-len={line.len}
+                        style={`stroke-dasharray:${line.len};stroke-dashoffset:${line.len}`}
                       />
                     ))}
                   </g>
@@ -897,13 +902,7 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
             </ul>
             <span class="sd-contour__time" aria-hidden="true">TIME</span>
           </div>
-          {/* Stroke dash values for JS-driven draw */}
-          <style set:html={`
-            .sd-contour__path {
-              stroke-dasharray: ${contourMaxLen};
-              stroke-dashoffset: ${contourMaxLen};
-            }
-          `} />
+
         </div>
       )}
 
@@ -1590,24 +1589,27 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
     const patterns = Array.from(contourEl.querySelectorAll<SVGGElement>('.sd-contour__pattern'));
     const maxLen = parseInt(getComputedStyle(contourEl).getPropertyValue('--contour-len') || '1300', 10);
 
-    // Dynamically compute drawDur so the contour line reaches the right
-    // edge at the same instant the soundwave front does.
-    // Wave: originates at the newsfeed globe center, expands at
-    //   speed = maxRadius / 14  where maxRadius = nfWidth × 1.5
-    // Time for wave to reach the right edge = (nfWidth − globeX) / speed.
-    // Contour must draw its full width in that same time.
-    let drawDur = 14.0 / 1.5;  // fallback ≈ 9.33s
-    const nfGlobe = document.querySelector<HTMLElement>('.sd-newsfeed__globe');
-    const nfBox   = nfGlobe?.closest<HTMLElement>('.sd-newsfeed');
-    if (nfGlobe && nfBox) {
-      const gRect = nfGlobe.getBoundingClientRect();
-      const nRect = nfBox.getBoundingClientRect();
-      const globeCenterX = gRect.left + gRect.width / 2 - nRect.left;
-      const nfW = nRect.width;
+    // Compute drawDur so the contour drawing tip arrives at the right
+    // edge at the same instant the soundwave ring front does.
+    //
+    // 1. Wave speed (px/s) = maxRadius / 14, where maxRadius = nfWidth × 1.5
+    // 2. Time for wave to cross the *contour plot* width = plotWidth / waveSpeed
+    // 3. stroke-dashoffset animates along *path length*, not horizontal
+    //    distance. Peaks add extra length, so the tip's average horizontal
+    //    speed is slower by the ratio maxLen / svgViewBoxWidth (1200).
+    //    Multiply drawDur by that ratio so the rightmost point of the
+    //    path is reached when the wave front passes it.
+    let drawDur = 14.0 / 1.5;  // fallback
+    const contourPlot = contourEl.querySelector<HTMLElement>('.sd-contour__plot');
+    const nfBox = document.querySelector<HTMLElement>('.sd-newsfeed');
+    if (contourPlot && nfBox) {
+      const plotWidth = contourPlot.getBoundingClientRect().width;
+      const nfW = nfBox.getBoundingClientRect().width;
       const maxRadius = nfW * 1.5;
-      const waveSpeed = maxRadius / 14.0;           // px / s
-      const distToRight = nfW - globeCenterX;
-      drawDur = distToRight / waveSpeed;             // ≈ 8–9 s
+      const waveSpeed = maxRadius / 14.0;                    // px / s
+      const horizontalTime = plotWidth / waveSpeed;           // time for wave to cross plot
+      const pathLengthRatio = maxLen / 1200;                  // path is longer than horizontal span
+      drawDur = horizontalTime * pathLengthRatio;
     }
 
     const fadeDur = 0.6;
@@ -1623,11 +1625,12 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
       window.addEventListener('clicopre-wave', () => {
         const pi = nextPattern % patterns.length;
         const paths = patterns[pi].querySelectorAll<SVGPathElement>('.sd-contour__path');
-        // Reset
+        // Reset each path using its own length
         paths.forEach(p => {
+          const len = parseInt(p.dataset.len || '1200', 10);
           p.style.transition = '';
           p.style.opacity = '1';
-          p.style.strokeDashoffset = `${maxLen}`;
+          p.style.strokeDashoffset = `${len}`;
         });
         active.push({ patternIdx: pi, t0: performance.now() / 1000, fading: false });
         nextPattern++;
@@ -1641,11 +1644,11 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
           const paths = patterns[d.patternIdx].querySelectorAll<SVGPathElement>('.sd-contour__path');
 
           if (dt < drawDur) {
-            // Drawing phase — move dashoffset from maxLen → 0
+            // Drawing phase — each path uses its own length so tips stay aligned
             const frac = dt / drawDur;
-            const offset = maxLen * (1 - frac);
             paths.forEach(p => {
-              p.style.strokeDashoffset = offset.toFixed(1);
+              const len = parseInt(p.dataset.len || '1200', 10);
+              p.style.strokeDashoffset = (len * (1 - frac)).toFixed(1);
             });
           } else if (!d.fading) {
             // Draw complete — start fade
@@ -1658,8 +1661,9 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
           } else if (dt > drawDur + fadeDur + 0.1) {
             // Fade done — clean up
             paths.forEach(p => {
+              const len = parseInt(p.dataset.len || '1200', 10);
               p.style.transition = '';
-              p.style.strokeDashoffset = `${maxLen}`;
+              p.style.strokeDashoffset = `${len}`;
             });
             active.splice(i, 1);
           }
@@ -1671,6 +1675,7 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
       const paths = patterns[0]?.querySelectorAll<SVGPathElement>('.sd-contour__path');
       if (paths) paths.forEach(p => {
         p.style.opacity = '1';
+        p.style.strokeDasharray = 'none';
         p.style.strokeDashoffset = '0';
       });
     }
