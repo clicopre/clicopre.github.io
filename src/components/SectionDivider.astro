@@ -571,11 +571,11 @@ for (const row of rcRows) {
   }
 }
 
-// Desk: 3× thicker than before (h was 2 → now 6). Width unchanged.
-const rcDeskHalfW = 14;
+// Desk / podium: visible bar, moved toward audience so speaker sits behind it.
+const rcDeskHalfW = 22;
 const rcDeskHalfH = 3;
 const rcDeskX = rcCx;
-const rcDeskY = rcH - 4;
+const rcDeskY = rcH - 7;  // moved 3 units toward audience (was rcH - 4)
 
 // Eight speakers, cycled by the JS state machine in the client script.
 const rcSpeakerSeats = [10, 160, 58, 126, 30, 81, 18, 172];
@@ -1950,6 +1950,20 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
           r.setAttribute('y', (y * yScale).toFixed(1));
           r.setAttribute('height', (h * yScale).toFixed(1));
         });
+        // Desk: wider and shorter on mobile so it doesn't look square
+        const deskMobile = rcSvg.querySelector<SVGRectElement>('.sd-rollcall__desk');
+        if (deskMobile) {
+          const dw = parseFloat(deskMobile.getAttribute('width') || '28');
+          const dh = parseFloat(deskMobile.getAttribute('height') || '6');
+          const dx = parseFloat(deskMobile.getAttribute('x') || '586');
+          const widerW = dw * 1.6;
+          deskMobile.setAttribute('width', widerW.toFixed(1));
+          deskMobile.setAttribute('x', (dx - (widerW - dw) / 2).toFixed(1));
+          deskMobile.setAttribute('height', (dh * 0.5).toFixed(1));
+          // Nudge y down so bottom edge stays roughly in place
+          const dy = parseFloat(deskMobile.getAttribute('y') || '0');
+          deskMobile.setAttribute('y', (dy + dh * 0.25).toFixed(1));
+        }
       }
 
       // ── Read geometry from SVG (post-mobile-rescale) ──
@@ -1973,12 +1987,14 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
 
       // Desk geometry (reads possibly-rescaled attributes)
       const deskRectY = parseFloat(deskEl?.getAttribute('y') || '53');
+      const deskRectH = parseFloat(deskEl?.getAttribute('height') || '6');
       const deskRectW = parseFloat(deskEl?.getAttribute('width') || '28');
       const deskRectX = parseFloat(deskEl?.getAttribute('x') || '586');
       const deskCenterX = deskRectX + deskRectW / 2;
-      const deskBehindY = deskRectY - 2;
+      // Speaker sits BEHIND the desk (below it, away from audience)
+      const deskBehindY = deskRectY + deskRectH + 2;
       const deskHW = deskRectW / 2;
-      const deskHH = parseFloat(deskEl?.getAttribute('height') || '6') / 2;
+      const deskHH = deskRectH / 2;
 
       // Active SVG wave elements
       const activeWaveEls: SVGElement[] = [];
@@ -1989,8 +2005,9 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
       const waveCx = deskCenterX;  // 600
       const waveCy = vbH;          // bottom edge
       // Max ellipse: slightly beyond outermost row (rx=590, ry=53)
+      // On mobile the viewBox height is rescaled, so ry must scale proportionally.
       const waveMaxRx = 620;
-      const waveMaxRy = 58;
+      const waveMaxRy = 58 * (vbH / 60);  // 58 at desktop (vbH=60), scales up on mobile
       const FRONT_SW = 2.4;        // front arc stroke-width (viewBox units)
       const TRAIL_BANDS = 8;       // gradient bands behind front
       const TRAIL_FRAC = 0.6;      // trail depth as fraction of current radius (~5/8)
@@ -2463,6 +2480,7 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
               mp.setAttribute('fill', blendedColor);
             }
             if (dt >= WALK_OUT_DUR) {
+              // Desk takes the speaker's blended color while present
               if (deskEl) deskEl.setAttribute('fill', blendedColor);
               state = 'SPEAKING'; stateT0 = now;
             }
@@ -2508,7 +2526,6 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
               // Remove any lingering SVG wave arcs
               activeWaveEls.forEach(el => el.remove());
               activeWaveEls.length = 0;
-              if (deskEl) deskEl.setAttribute('fill', deskNeutral);
               state = 'WALK_BACK'; stateT0 = now;
             }
           } else if (state === 'WALK_BACK') {
@@ -2519,16 +2536,17 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
               mp.setAttribute('cx', lerp(deskCenterX, seatX, t).toFixed(1));
               mp.setAttribute('cy', lerp(deskBehindY, seatY, t).toFixed(1));
               mp.setAttribute('r', baseR.toFixed(2));
-              mp.setAttribute('fill', blendColors(blendedColor, activeParty, ease(t)));
+              mp.setAttribute('fill', blendedColor);
             }
             if (dt >= WALK_BACK_DUR) {
               const mp2 = mpByIdx.get(activeIdx);
               if (mp2) {
                 mp2.setAttribute('cx', seatX.toFixed(1));
                 mp2.setAttribute('cy', seatY.toFixed(1));
-                mp2.setAttribute('fill', activeParty);
+                mp2.setAttribute('fill', blendedColor);
                 mp2.setAttribute('r', mp2.dataset.baseR || '3.875');
               }
+              if (deskEl) deskEl.setAttribute('fill', deskNeutral);
               state = 'IDLE';
             }
           }

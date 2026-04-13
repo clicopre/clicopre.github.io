@@ -1316,7 +1316,7 @@ section.deep { background: var(--c-bg-deep); }
   height: 100%;
 }
 .sd-rollcall__desk {
-  fill: var(--c-line-strong);
+  /* fill set via JS setAttribute — no CSS override */
 }
 .sd-rollcall__wave {
   vector-effect: non-scaling-stroke;
