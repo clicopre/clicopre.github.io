@@ -24,3 +24,4 @@ pnpm-debug.log*
 
 # screenshot loop scratch space
 temporary_screenshots/
+.playwright-mcp/

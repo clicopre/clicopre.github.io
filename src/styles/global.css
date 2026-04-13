@@ -898,6 +898,23 @@ section.deep { background: var(--c-bg-deep); }
 .sd-contour__code {
   color: var(--c-ink);
 }
+.sd-contour__wave-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+.sd-contour__ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 2.5px solid;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  width: 0;
+  height: 0;
+  opacity: 0;
+}
 
 /* ── Policy divider (CO₂ line + legislation bands) ─────────────── */
 .sd-policy {
@@ -1287,6 +1304,7 @@ section.deep { background: var(--c-bg-deep); }
 
 /* ── Rollcall divider (elongated plenary chamber) ───────────────── */
 .sd-rollcall__plot {
+  position: relative;
   height: 56px;
   background: var(--c-bg-alt);
   border-block: 1px solid var(--c-line);
@@ -1301,6 +1319,37 @@ section.deep { background: var(--c-bg-deep); }
   fill: var(--c-line-strong);
 }
 .sd-rollcall__wave {
+  vector-effect: non-scaling-stroke;
+}
+/* Expanding-ring overlay (same pattern as contour + newsfeed) */
+.sd-rollcall__wave-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+.sd-rollcall__ring {
+  position: absolute;
+  border: 3px solid var(--c-accent);
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+.sd-rollcall__focus-ring {
+  position: absolute;
+  border: 2.5px solid;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  width: 0;
+  height: 0;
+  opacity: 0;
+}
+/* Speech soundwave: hemicycular arc front + gradient trail in SVG */
+.sd-rollcall__wave-arc {
+  pointer-events: none;
+  fill: none;
   vector-effect: non-scaling-stroke;
 }
 
@@ -1349,8 +1398,6 @@ section.deep { background: var(--c-bg-deep); }
   .sd-network__wave-ring,
   .sd-nf-cross-ring { animation: none !important; }
   .sd-contour__path { stroke-dashoffset: 0; stroke-dasharray: none; }
-  .sd-rollcall__mp animate,
-  .sd-rollcall__wave animate { display: none; }
 }
 
 /* ------------------------------------------------------------------ */

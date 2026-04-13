@@ -171,7 +171,7 @@ const contourPatterns: ContourLine[][] = contourPatternCountries.map((countryInd
 // Synchronized with newsfeed/network: all lines in a pattern draw
 // together over waveCrossDur (14s), timed to match the soundwave.
 // Each pattern fires every dotInterval (10s).
-const contourDrawDur = 14;       // matches waveCrossDur
+const contourDrawDur = 15;       // matches waveCrossDur = dotInterval
 const contourHoldDur = 0;
 const contourPatternDur = contourDrawDur + contourHoldDur;
 const contourCycleDur = contourPatternDur * contourPatternCount;
@@ -516,12 +516,12 @@ const rcRows = [
 ];
 
 const rcParties = [
-  '#2c5d8a',
-  '#5a8db5',
-  '#0a8a7a',
-  '#6b7985',
-  '#c9722b',
-  '#b8401f',
+  '#c2bfba',   // lightest warm gray
+  '#b0ada8',
+  '#9e9b96',   // mid-light
+  '#8c8984',
+  '#7a7772',   // mid-dark
+  '#696660',   // darkest (still reads color)
 ];
 
 // Seats are sampled by *arc length* (rather than uniform angle) over a
@@ -577,97 +577,12 @@ const rcDeskHalfH = 3;
 const rcDeskX = rcCx;
 const rcDeskY = rcH - 4;
 
-// Eight speakers cycling. Sequential timing; the cycle then loops.
-// Walks are 2× slower than before; soundwaves are 3× slower (so the
-// desk stay is extended to fit three of them).
+// Eight speakers, cycled by the JS state machine in the client script.
 const rcSpeakerSeats = [10, 160, 58, 126, 30, 81, 18, 172];
 const rcSpeakerSet = new Set(rcSpeakerSeats);
-const rcWalkOut = 2.4;
-const rcDeskStay = 12.0;
-const rcWalkBack = 2.4;
-const rcSlotDur = rcWalkOut + rcDeskStay + rcWalkBack; // 16.8s
-const rcCycleDur = rcSlotDur * rcSpeakerSeats.length;  // 134.4s
 
-// keyTimes (as fractions of rcCycleDur) for the MP cx/cy/fill animation.
-const kT0 = 0;
-const kT1 = rcWalkOut / rcCycleDur;
-const kT2 = (rcWalkOut + rcDeskStay) / rcCycleDur;
-const kT3 = (rcWalkOut + rcDeskStay + rcWalkBack) / rcCycleDur;
-const mpKeyTimes = `${kT0};${kT1.toFixed(5)};${kT2.toFixed(5)};${kT3.toFixed(5)};1`;
-
-// Three hemicyclic soundwaves per speaker, 3× slower than before.
-// Offsets are seconds from slot start; they all complete before the
-// MP starts walking back.
-const waveOffsetsSec = [2.6, 6.0, 9.4];
-const waveDurSec = 4.5;
-// Colour shift fires when the THIRD wave reaches the rows
-// (its mid-burst, in slot-relative seconds).
-const colorShiftSlotTime = waveOffsetsSec[2] + waveDurSec * 0.55; // ≈ 11.9s
-
-const rcSpeakers = rcSpeakerSeats.map((idx, k) => {
-  const seat = rcSeats[idx];
-  return {
-    idx,
-    seat,
-    dx: rcDeskX,            // middle of desk length
-    dy: rcDeskY - 5,        // behind (above) the desk
-    begin: k * rcSlotDur,
-  };
-});
-
-// Per-seat colour timelines. Discrete fill changes happen at the moment
-// each speaker's first wave reaches the rows. With prob 0.8 the seat
-// shifts to the speaker's party colour; with prob 0.2 it shifts to the
-// "opposite" party (mirrored across the spectrum).
-const rcRand = (i: number, j: number) => {
-  const s = Math.sin(i * 374.31 + j * 91.7) * 91283.71;
-  return s - Math.floor(s);
-};
-
-const rcColorKeyTimesArr: string[] = ['0'];
-for (let k = 0; k < rcSpeakerSeats.length; k++) {
-  const t = (k * rcSlotDur + colorShiftSlotTime) / rcCycleDur;
-  rcColorKeyTimesArr.push(t.toFixed(5));
-}
-rcColorKeyTimesArr.push('1');
-const rcColorKeyTimes = rcColorKeyTimesArr.join(';');
-
-// 50/50 split: each non-speaker seat either takes the speaker's colour
-// or keeps its original colour from t=0. This is independent for each
-// speaker — no cumulative drift.
-const rcSeatTimelines = rcSeats.map((seat) => [seat.party]);
-rcSpeakerSeats.forEach((sIdx, k) => {
-  const speaker = rcSeats[sIdx];
-  rcSeats.forEach((seat, i) => {
-    if (i === sIdx || rcSpeakerSet.has(i)) {
-      rcSeatTimelines[i].push(rcSeatTimelines[i][rcSeatTimelines[i].length - 1]);
-      return;
-    }
-    const r = rcRand(i, k);
-    rcSeatTimelines[i].push(r < 0.5 ? speaker.party : seat.party);
-  });
-});
-// Reset back to initial colour at the end of the cycle so the loop is clean.
-rcSeats.forEach((seat, i) => rcSeatTimelines[i].push(seat.party));
-
-// Desk colour timeline: takes the speaker's party colour while they
-// stand behind it; reverts between speakers. Neutral colour is the
-// animation background (--c-bg-alt = #ebe7da) made a tad darker.
+// Neutral desk colour — slightly darker than --c-bg-alt
 const rcDeskNeutral = '#c8c4b6';
-const rcDeskKeyTimesArr: string[] = ['0'];
-const rcDeskColorsArr: string[] = [rcDeskNeutral];
-for (let k = 0; k < rcSpeakerSeats.length; k++) {
-  const tIn = (k * rcSlotDur + rcWalkOut) / rcCycleDur;
-  const tOut = (k * rcSlotDur + rcWalkOut + rcDeskStay) / rcCycleDur;
-  rcDeskKeyTimesArr.push(tIn.toFixed(5));
-  rcDeskColorsArr.push(rcSeats[rcSpeakerSeats[k]].party);
-  rcDeskKeyTimesArr.push(tOut.toFixed(5));
-  rcDeskColorsArr.push(rcDeskNeutral);
-}
-rcDeskKeyTimesArr.push('1');
-rcDeskColorsArr.push(rcDeskNeutral);
-const rcDeskKeyTimes = rcDeskKeyTimesArr.join(';');
-const rcDeskColors = rcDeskColorsArr.join(';');
 
 // ── Newsfeed (spinning globe + ticker) ──────────────────────────────
 // Deterministic news items spanning 2010-01–2024-07. Each item has a
@@ -708,46 +623,106 @@ const nfSourceTheme: Record<string, string> = {
 const nfSourceColor = (src: string) => nfThemeColors[nfSourceTheme[src] || 'news'] || nfThemeColors.news;
 
 const nfItems: NewsItem[] = [
-  { source: 'REUTERS',         date: '2010-05-06', place: 'London, UK',            headline: 'Hung parliament: no party wins outright majority in UK general election', theme: 'news' },
+  // ── 2010 ────────────────────────────────────────────────────────
+  { source: 'ECB',             date: '2010-04-23', place: 'Athens, GR',             headline: 'Greece requests EU-IMF bailout as sovereign debt crisis erupts', theme: 'finance' },
+  { source: 'REUTERS',         date: '2010-05-06', place: 'London, UK',             headline: 'Hung parliament: no party wins outright majority in UK general election', theme: 'news' },
   { source: 'BLOOMBERG',       date: '2010-05-06', place: 'New York, NY',           headline: 'Flash crash wipes nearly 1,000 points off Dow in minutes', theme: 'finance' },
-  { source: 'NOAA',            date: '2010-08-14', place: 'Indus Basin, Pakistan',  headline: 'Unprecedented monsoon flooding displaces 20 million across Pakistan', theme: 'weather' },
   { source: 'AFP',             date: '2010-07-11', place: 'Johannesburg, ZA',       headline: 'Spain lifts first FIFA World Cup title after 1-0 extra-time win', theme: 'sports' },
+  { source: 'NOAA',            date: '2010-08-14', place: 'Indus Basin, Pakistan',  headline: 'Unprecedented monsoon flooding displaces 20 million across Pakistan', theme: 'weather' },
+  // ── 2011 ────────────────────────────────────────────────────────
+  { source: 'AFP',             date: '2011-02-11', place: 'Cairo, EG',              headline: 'Mubarak resigns after 18 days of mass protests across Egypt', theme: 'news' },
   { source: 'AP',              date: '2011-03-11', place: 'Tōhoku, Japan',          headline: '9.1-magnitude earthquake triggers tsunami and Fukushima nuclear crisis', theme: 'weather' },
+  { source: 'IMF',             date: '2011-04-06', place: 'Lisbon, PT',             headline: 'Portugal requests EU-IMF bailout as bond yields soar past 8%', theme: 'finance' },
   { source: 'ECB',             date: '2011-11-03', place: 'Frankfurt, DE',          headline: 'ECB cuts rates as eurozone debt crisis spreads to Italy and Spain', theme: 'finance' },
-  { source: 'BBC',             date: '2012-07-27', place: 'London, UK',             headline: 'London 2012 Olympic Games open with Danny Boyle ceremony', theme: 'sports' },
-  { source: 'IPCC',            date: '2012-11-18', place: 'Doha, Qatar',            headline: 'IPCC special report: extreme weather events increasing in frequency', theme: 'weather' },
+  // ── 2012 ────────────────────────────────────────────────────────
   { source: 'IMF',             date: '2012-06-29', place: 'Brussels, BE',           headline: 'Euro-area leaders agree to ESM direct bank recapitalisation', theme: 'finance' },
-  { source: 'REUTERS',         date: '2013-09-10', place: 'Stockholm, SE',          headline: 'Nobel committee awards physics prize for Higgs boson prediction', theme: 'culture' },
+  { source: 'BBC',             date: '2012-07-27', place: 'London, UK',             headline: 'London 2012 Olympic Games open with Danny Boyle ceremony', theme: 'sports' },
+  { source: 'NOAA',            date: '2012-10-29', place: 'New York, NY',           headline: 'Hurricane Sandy strikes US East Coast; $70 billion in damage', theme: 'weather' },
+  { source: 'AP',              date: '2012-11-06', place: 'Washington, DC',         headline: 'Obama wins re-election, defeating Romney in closely watched race', theme: 'news' },
+  { source: 'IPCC',            date: '2012-11-18', place: 'Doha, Qatar',            headline: 'IPCC special report: extreme weather events increasing in frequency', theme: 'weather' },
+  // ── 2013 ────────────────────────────────────────────────────────
+  { source: 'ECB',             date: '2013-03-25', place: 'Nicosia, CY',            headline: 'Cyprus banking crisis: unprecedented levy on deposits agreed', theme: 'finance' },
   { source: 'FEDERAL RESERVE', date: '2013-05-22', place: 'Washington, DC',         headline: 'Bernanke hints at tapering QE; bond yields spike in "taper tantrum"', theme: 'finance' },
+  { source: 'ECMWF',           date: '2013-06-03', place: 'Prague, CZ',             headline: 'Worst flooding in decade forces mass evacuations across Czechia', theme: 'weather' },
+  { source: 'REUTERS',         date: '2013-09-10', place: 'Stockholm, SE',          headline: 'Nobel committee awards physics prize for Higgs boson prediction', theme: 'culture' },
   { source: 'WMO',             date: '2013-11-08', place: 'Tacloban, Philippines',  headline: 'Super Typhoon Haiyan makes landfall with 315 km/h winds', theme: 'weather' },
+  // ── 2014 ────────────────────────────────────────────────────────
+  { source: 'REUTERS',         date: '2014-03-18', place: 'Simferopol, UA',         headline: 'Russia annexes Crimea after disputed referendum; West imposes sanctions', theme: 'news' },
   { source: 'AP',              date: '2014-07-13', place: 'Rio de Janeiro, BR',     headline: 'Germany routs Brazil 7-1 in World Cup semi-final at Maracanã', theme: 'sports' },
   { source: 'WORLD BANK',      date: '2014-10-08', place: 'Washington, DC',         headline: 'World Bank warns of rising inequality dampening growth prospects', theme: 'finance' },
-  { source: 'BBC',             date: '2015-12-12', place: 'Paris, FR',              headline: '195 nations adopt Paris Agreement on climate change', theme: 'weather' },
+  // ── 2015 ────────────────────────────────────────────────────────
+  { source: 'AP',              date: '2015-05-23', place: 'Dublin, IE',             headline: 'Ireland votes to legalise same-sex marriage by popular referendum', theme: 'news' },
   { source: 'BLOOMBERG',       date: '2015-08-24', place: 'Shanghai, CN',           headline: 'Chinese stock market crash triggers global "Black Monday" sell-off', theme: 'finance' },
+  { source: 'AFP',             date: '2015-09-02', place: 'Bodrum, TR',             headline: 'Refugee crisis: image of drowned toddler galvanises European debate', theme: 'news' },
+  { source: 'AFP',             date: '2015-10-25', place: 'Warsaw, PL',             headline: 'Law and Justice wins Polish parliamentary majority on conservative wave', theme: 'news' },
+  { source: 'BBC',             date: '2015-12-12', place: 'Paris, FR',              headline: '195 nations adopt Paris Agreement on climate change', theme: 'weather' },
   { source: 'ECMWF',           date: '2015-12-30', place: 'North Atlantic',         headline: 'Storm Frank pushes UK winter flooding; December warmest on record', theme: 'weather' },
-  { source: 'AFP',             date: '2016-08-21', place: 'Rio de Janeiro, BR',     headline: 'Rio 2016 Olympics close; Usain Bolt completes "triple-triple"', theme: 'sports' },
+  // ── 2016 ────────────────────────────────────────────────────────
+  { source: 'AFP',             date: '2016-03-22', place: 'Brussels, BE',           headline: 'Coordinated bombings at Brussels airport and metro kill 32', theme: 'news' },
   { source: 'REUTERS',         date: '2016-06-24', place: 'London, UK',             headline: 'UK votes to leave EU; sterling plunges to 31-year low', theme: 'news' },
+  { source: 'AFP',             date: '2016-08-21', place: 'Rio de Janeiro, BR',     headline: 'Rio 2016 Olympics close; Usain Bolt completes "triple-triple"', theme: 'sports' },
+  { source: 'AP',              date: '2016-11-08', place: 'Washington, DC',         headline: 'Trump wins US presidential election in upset over Clinton', theme: 'news' },
   { source: 'OECD',            date: '2016-11-09', place: 'Paris, FR',              headline: 'OECD revises global forecasts after surprise US election result', theme: 'finance' },
+  // ── 2017 ────────────────────────────────────────────────────────
+  { source: 'REUTERS',         date: '2017-02-01', place: 'Bucharest, RO',          headline: 'Largest protests in Romania since 1989 erupt against corruption decree', theme: 'news' },
+  { source: 'REUTERS',         date: '2017-03-15', place: 'The Hague, NL',          headline: 'Dutch election: Rutte defeats Wilders in closely watched populism test', theme: 'news' },
+  { source: 'AFP',             date: '2017-05-07', place: 'Paris, FR',              headline: 'Macron wins French presidency, defeating Le Pen in runoff', theme: 'news' },
+  { source: 'NOAA',            date: '2017-08-25', place: 'Houston, TX',            headline: 'Hurricane Harvey dumps record rainfall on Houston; catastrophic flooding', theme: 'weather' },
   { source: 'MET OFFICE',      date: '2017-09-06', place: 'Caribbean Sea',          headline: 'Hurricane Irma reaches Category 5 with 295 km/h sustained winds', theme: 'weather' },
+  { source: 'AP',              date: '2017-10-01', place: 'Barcelona, ES',          headline: 'Catalonia holds disputed independence referendum amid police crackdown', theme: 'news' },
   { source: 'ECB',             date: '2017-10-26', place: 'Frankfurt, DE',          headline: 'ECB extends asset purchases but halves monthly pace to €30bn', theme: 'finance' },
+  { source: 'ECMWF',           date: '2017-10-15', place: 'Pedrógão Grande, PT',    headline: 'Deadliest wildfire season in Portuguese history kills over 100', theme: 'weather' },
+  // ── 2018 ────────────────────────────────────────────────────────
   { source: 'AP',              date: '2018-02-09', place: 'PyeongChang, KR',        headline: 'Winter Olympics open under unified Korean flag', theme: 'sports' },
+  { source: 'REUTERS',         date: '2018-02-25', place: 'Bratislava, SK',         headline: 'Murder of journalist Kuciak triggers political crisis in Slovakia', theme: 'news' },
+  { source: 'BBC',             date: '2018-05-25', place: 'Dublin, IE',             headline: 'Ireland votes overwhelmingly to repeal abortion ban in referendum', theme: 'news' },
+  { source: 'BLOOMBERG',       date: '2018-07-06', place: 'Beijing, CN',            headline: 'US-China trade war begins as first tariffs take effect', theme: 'finance' },
+  { source: 'ECMWF',           date: '2018-07-23', place: 'Athens, GR',             headline: 'Greek wildfires kill 102; deadliest blazes in Europe in decades', theme: 'weather' },
+  { source: 'AFP',             date: '2018-08-14', place: 'Genoa, IT',              headline: 'Morandi bridge collapses killing 43; sparks infrastructure debate', theme: 'news' },
   { source: 'BLOOMBERG',       date: '2018-12-24', place: 'New York, NY',           headline: 'S&P 500 posts worst Christmas Eve decline since Great Depression', theme: 'finance' },
+  // ── 2019 ────────────────────────────────────────────────────────
   { source: 'BBC',             date: '2019-02-02', place: 'Twickenham, UK',         headline: 'Wales edge England 21-13 to clinch Six Nations Grand Slam', theme: 'sports' },
+  { source: 'AFP',             date: '2019-06-05', place: 'Copenhagen, DK',         headline: 'Social Democrats win Danish election; Frederiksen becomes PM', theme: 'news' },
   { source: 'NOAA',            date: '2019-07-25', place: 'Paris, FR',              headline: 'France shatters all-time heat record at 46.0°C during June heatwave', theme: 'weather' },
+  { source: 'MET OFFICE',      date: '2019-12-30', place: 'Sydney, AU',             headline: 'Australian bushfires burn 46 million acres; smoke plume circles globe', theme: 'weather' },
+  // ── 2020 ────────────────────────────────────────────────────────
   { source: 'WHO',             date: '2020-03-11', place: 'Geneva, CH',             headline: 'WHO declares COVID-19 a global pandemic', theme: 'health' },
   { source: 'FEDERAL RESERVE', date: '2020-03-15', place: 'Washington, DC',         headline: 'Fed slashes rates to near zero; launches unlimited QE programme', theme: 'finance' },
-  { source: 'REUTERS',         date: '2021-07-23', place: 'Tokyo, JP',              headline: 'Tokyo 2020 Olympics open one year late before empty stands', theme: 'sports' },
+  { source: 'NOAA',            date: '2020-09-09', place: 'Portland, OR',           headline: 'US West Coast wildfires turn skies orange from California to Washington', theme: 'weather' },
+  { source: 'AP',              date: '2020-11-07', place: 'Washington, DC',         headline: 'Biden wins US presidential election after days of ballot counting', theme: 'news' },
+  // ── 2021 ────────────────────────────────────────────────────────
+  { source: 'REUTERS',         date: '2021-03-23', place: 'Suez Canal, EG',         headline: 'Ever Given blocks Suez Canal for six days, disrupting global trade', theme: 'finance' },
+  { source: 'WMO',             date: '2021-06-24', place: 'Moravia, CZ',            headline: 'Rare tornado devastates villages in south Moravia; worst in Czech history', theme: 'weather' },
   { source: 'DWD',             date: '2021-07-14', place: 'Ahr Valley, DE',         headline: 'Record rainfall triggers catastrophic flooding across western Germany', theme: 'weather' },
+  { source: 'MET OFFICE',      date: '2021-07-15', place: 'Limburg, NL',            headline: 'Severe flooding hits southern Netherlands as Meuse river overflows', theme: 'weather' },
+  { source: 'REUTERS',         date: '2021-07-23', place: 'Tokyo, JP',              headline: 'Tokyo 2020 Olympics open one year late before empty stands', theme: 'sports' },
   { source: 'IPCC',            date: '2021-08-09', place: 'Geneva, CH',             headline: 'IPCC AR6: human influence on climate "unequivocal"', theme: 'weather' },
+  { source: 'AP',              date: '2021-08-15', place: 'Kabul, AF',              headline: 'Taliban seize Kabul as Western forces complete withdrawal', theme: 'news' },
+  // ── 2022 ────────────────────────────────────────────────────────
+  { source: 'REUTERS',         date: '2022-02-24', place: 'Kyiv, UA',               headline: 'Russia launches full-scale invasion of Ukraine', theme: 'news' },
   { source: 'IMF',             date: '2022-04-19', place: 'Washington, DC',         headline: 'IMF cuts global growth outlook amid war, inflation, and supply shocks', theme: 'finance' },
-  { source: 'AFP',             date: '2022-12-18', place: 'Lusail, QA',             headline: 'Argentina wins World Cup on penalties; Messi lifts trophy', theme: 'sports' },
+  { source: 'ECMWF',           date: '2022-06-30', place: 'Madrid, ES',             headline: 'Record heatwave scorches Europe; over 60,000 excess deaths estimated', theme: 'weather' },
+  { source: 'REUTERS',         date: '2022-09-25', place: 'Rome, IT',               headline: 'Meloni leads right-wing coalition to victory in Italian election', theme: 'news' },
+  { source: 'AFP',             date: '2022-09-26', place: 'Baltic Sea',             headline: 'Nord Stream pipelines sabotaged in suspected state-sponsored attack', theme: 'news' },
   { source: 'BANK OF ENGLAND', date: '2022-09-28', place: 'London, UK',             headline: 'Bank of England launches emergency gilt purchases after mini-budget turmoil', theme: 'finance' },
+  { source: 'AFP',             date: '2022-12-18', place: 'Lusail, QA',             headline: 'Argentina wins World Cup on penalties; Messi lifts trophy', theme: 'sports' },
+  // ── 2023 ────────────────────────────────────────────────────────
+  { source: 'BLOOMBERG',       date: '2023-03-10', place: 'San Francisco, CA',      headline: 'Silicon Valley Bank collapses in largest US bank failure since 2008', theme: 'finance' },
+  { source: 'REUTERS',         date: '2023-04-04', place: 'Helsinki, FI',           headline: 'Finland joins NATO, doubling the alliance border with Russia', theme: 'news' },
   { source: 'ECMWF',           date: '2023-07-06', place: 'Global',                 headline: 'July 4 confirmed as hottest day in recorded history', theme: 'weather' },
+  { source: 'WMO',             date: '2023-09-10', place: 'Derna, LY',              headline: 'Storm Daniel triggers catastrophic flooding in Libya; thousands dead', theme: 'weather' },
   { source: 'REUTERS',         date: '2023-10-05', place: 'Stockholm, SE',          headline: 'Nobel Prize in Economics awarded for research on gender labour gaps', theme: 'culture' },
+  { source: 'AFP',             date: '2023-10-07', place: 'Gaza',                   headline: 'Hamas attacks Israel; war in Gaza begins with massive escalation', theme: 'news' },
+  { source: 'AP',              date: '2023-10-15', place: 'Warsaw, PL',             headline: 'Polish opposition defeats PiS in landmark parliamentary election', theme: 'news' },
+  // ── 2024 ────────────────────────────────────────────────────────
   { source: 'BLOOMBERG',       date: '2024-01-02', place: 'New York, NY',           headline: 'S&P 500 closes at all-time high, capping 24% annual rally', theme: 'finance' },
   { source: 'WMO',             date: '2024-03-19', place: 'Geneva, CH',             headline: 'WMO confirms 2023 as warmest year on record by large margin', theme: 'weather' },
-  { source: 'BBC',             date: '2024-07-26', place: 'Paris, FR',              headline: 'Paris 2024 Olympics open with Seine river ceremony', theme: 'sports' },
+  { source: 'REUTERS',         date: '2024-04-13', place: 'Tehran, IR',             headline: 'Iran launches unprecedented drone and missile barrage at Israel', theme: 'news' },
   { source: 'AP',              date: '2024-06-09', place: 'Brussels, BE',           headline: 'European Parliament elections see record turnout amid far-right gains', theme: 'news' },
+  { source: 'BBC',             date: '2024-07-26', place: 'Paris, FR',              headline: 'Paris 2024 Olympics open with Seine river ceremony', theme: 'sports' },
+  { source: 'NOAA',            date: '2024-09-27', place: 'Asheville, NC',          headline: 'Hurricane Helene devastates US Southeast; hundreds killed', theme: 'weather' },
+  { source: 'AP',              date: '2024-11-05', place: 'Washington, DC',         headline: 'Trump wins second presidential term, defeating Harris', theme: 'news' },
+  { source: 'REUTERS',         date: '2024-12-06', place: 'Bucharest, RO',          headline: 'Romanian court annuls presidential election over foreign interference', theme: 'news' },
 ];
 
 // Globe dots — one per news item, coloured by theme. Each dot lights up
@@ -759,51 +734,111 @@ const nfGlobeCy = 45;
 
 // Lat/lon for each news item's place (same order as nfItems).
 const nfPlaces: { lat: number; lon: number }[] = [
+  // ── 2010 ──
+  { lat: 38.0, lon: 23.7 },   // Athens
   { lat: 51.5, lon: -0.1 },   // London
   { lat: 40.7, lon: -74.0 },  // New York
-  { lat: 30.0, lon: 70.0 },   // Pakistan
   { lat: -26.2, lon: 28.0 },  // Johannesburg
-  { lat: 38.3, lon: 140.9 },  // Tohoku
+  { lat: 30.0, lon: 70.0 },   // Pakistan
+  // ── 2011 ──
+  { lat: 30.0, lon: 31.2 },   // Cairo
+  { lat: 38.3, lon: 140.9 },  // Tōhoku
+  { lat: 38.7, lon: -9.1 },   // Lisbon (PT bailout)
   { lat: 50.1, lon: 8.7 },    // Frankfurt
+  // ── 2012 ──
+  { lat: 50.8, lon: 4.4 },    // Brussels (ESM)
   { lat: 51.5, lon: -0.1 },   // London (Olympics)
+  { lat: 40.7, lon: -74.0 },  // New York (Sandy)
+  { lat: 38.9, lon: -77.0 },  // Washington (Obama)
   { lat: 25.3, lon: 51.5 },   // Doha
-  { lat: 50.8, lon: 4.4 },    // Brussels
-  { lat: 59.3, lon: 18.1 },   // Stockholm
+  // ── 2013 ──
+  { lat: 35.2, lon: 33.4 },   // Nicosia
   { lat: 38.9, lon: -77.0 },  // Washington
+  { lat: 50.1, lon: 14.4 },   // Prague (CZ floods)
+  { lat: 59.3, lon: 18.1 },   // Stockholm
   { lat: 11.3, lon: 125.0 },  // Tacloban
+  // ── 2014 ──
+  { lat: 45.0, lon: 34.1 },   // Simferopol
   { lat: -22.9, lon: -43.2 }, // Rio
   { lat: 38.9, lon: -77.0 },  // Washington
-  { lat: 48.9, lon: 2.3 },    // Paris
+  // ── 2015 ──
+  { lat: 53.3, lon: -6.3 },   // Dublin (IE marriage)
   { lat: 31.2, lon: 121.5 },  // Shanghai
+  { lat: 37.0, lon: 27.4 },   // Bodrum
+  { lat: 52.2, lon: 21.0 },   // Warsaw (PL election)
+  { lat: 48.9, lon: 2.3 },    // Paris (COP21)
   { lat: 55.0, lon: -3.0 },   // North Atlantic / UK
-  { lat: -22.9, lon: -43.2 }, // Rio
+  // ── 2016 ──
+  { lat: 50.8, lon: 4.4 },    // Brussels (bombings)
   { lat: 51.5, lon: -0.1 },   // London (Brexit)
-  { lat: 48.9, lon: 2.3 },    // Paris
+  { lat: -22.9, lon: -43.2 }, // Rio
+  { lat: 38.9, lon: -77.0 },  // Washington (Trump)
+  { lat: 48.9, lon: 2.3 },    // Paris (OECD)
+  // ── 2017 ──
+  { lat: 44.4, lon: 26.1 },   // Bucharest (RO protests)
+  { lat: 52.1, lon: 4.3 },    // The Hague (NL election)
+  { lat: 48.9, lon: 2.3 },    // Paris (Macron)
+  { lat: 29.8, lon: -95.4 },  // Houston
   { lat: 18.0, lon: -65.0 },  // Caribbean
+  { lat: 41.4, lon: 2.2 },    // Barcelona (Catalonia)
   { lat: 50.1, lon: 8.7 },    // Frankfurt
+  { lat: 39.9, lon: -8.1 },   // Pedrógão Grande (PT fires)
+  // ── 2018 ──
   { lat: 37.6, lon: 127.0 },  // PyeongChang
+  { lat: 48.1, lon: 17.1 },   // Bratislava (SK)
+  { lat: 53.3, lon: -6.3 },   // Dublin (IE abortion)
+  { lat: 39.9, lon: 116.4 },  // Beijing
+  { lat: 38.0, lon: 23.7 },   // Athens (fires)
+  { lat: 44.4, lon: 8.9 },    // Genoa (IT bridge)
   { lat: 40.7, lon: -74.0 },  // New York
+  // ── 2019 ──
   { lat: 51.5, lon: -0.1 },   // Twickenham
+  { lat: 55.7, lon: 12.6 },   // Copenhagen (DK election)
   { lat: 48.9, lon: 2.3 },    // Paris
+  { lat: -33.9, lon: 151.2 }, // Sydney
+  // ── 2020 ──
   { lat: 46.2, lon: 6.1 },    // Geneva
   { lat: 38.9, lon: -77.0 },  // Washington
-  { lat: 35.7, lon: 139.7 },  // Tokyo
+  { lat: 45.5, lon: -122.7 }, // Portland
+  { lat: 38.9, lon: -77.0 },  // Washington (Biden)
+  // ── 2021 ──
+  { lat: 30.5, lon: 32.4 },   // Suez Canal
+  { lat: 49.0, lon: 17.0 },   // Moravia (CZ tornado)
   { lat: 50.3, lon: 7.0 },    // Ahr Valley
+  { lat: 50.8, lon: 5.9 },    // Limburg (NL floods)
+  { lat: 35.7, lon: 139.7 },  // Tokyo
   { lat: 46.2, lon: 6.1 },    // Geneva
+  { lat: 34.5, lon: 69.2 },   // Kabul
+  // ── 2022 ──
+  { lat: 50.5, lon: 30.5 },   // Kyiv
   { lat: 38.9, lon: -77.0 },  // Washington
-  { lat: 25.4, lon: 51.4 },   // Lusail
+  { lat: 40.4, lon: -3.7 },   // Madrid
+  { lat: 41.9, lon: 12.5 },   // Rome
+  { lat: 55.5, lon: 15.5 },   // Baltic Sea
   { lat: 51.5, lon: -0.1 },   // London
+  { lat: 25.4, lon: 51.4 },   // Lusail
+  // ── 2023 ──
+  { lat: 37.8, lon: -122.4 }, // San Francisco
+  { lat: 60.2, lon: 24.9 },   // Helsinki (FI NATO)
   { lat: 46.2, lon: 6.1 },    // Geneva (ECMWF global)
+  { lat: 32.8, lon: 22.6 },   // Derna
   { lat: 59.3, lon: 18.1 },   // Stockholm
+  { lat: 31.5, lon: 34.5 },   // Gaza
+  { lat: 52.2, lon: 21.0 },   // Warsaw (PL election)
+  // ── 2024 ──
   { lat: 40.7, lon: -74.0 },  // New York
   { lat: 46.2, lon: 6.1 },    // Geneva
-  { lat: 48.9, lon: 2.3 },    // Paris
+  { lat: 35.7, lon: 51.4 },   // Tehran
   { lat: 50.8, lon: 4.4 },    // Brussels
+  { lat: 48.9, lon: 2.3 },    // Paris
+  { lat: 35.6, lon: -82.6 },  // Asheville
+  { lat: 38.9, lon: -77.0 },  // Washington (Trump 2nd)
+  { lat: 44.4, lon: 26.1 },   // Bucharest (RO election)
 ];
 
 // Dots are driven by client-side JS so they can rotate with the globe,
 // disappear behind the horizon, and spawn expanding soundwave rings.
-const nfTickerDur = 280; // slower: each of 40 items appears every ~7s
+const nfTickerDur = 595; // ~85 items × 7s each
 const nfDotData = nfPlaces.map((d, i) => ({
   lat: (d.lat / 180) * Math.PI,
   lon: (d.lon / 180) * Math.PI,
@@ -864,6 +899,7 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
               </ul>
             </div>
             <div class="sd-contour__plot">
+              <div class="sd-contour__wave-overlay" aria-hidden="true"></div>
               <svg viewBox={`0 0 ${cW} ${cH}`} preserveAspectRatio="none">
                 <g class="sd-contour__grid">
                   <line x1="0" y1="0"   x2={cW} y2="0"   />
@@ -1093,7 +1129,7 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
                   class={`sd-network__glyph sd-network__glyph--${g.kind}`}
                   data-gi={i}
                   style={`left: ${g.leftPct}%; top: ${g.topPct}%`}
-                >{g.kind === 'heart' ? '❤️' : g.kind === 'haha' ? '😂' : g.kind === 'wow' ? '😮' : g.kind === 'sad' ? '😢' : g.kind === 'angry' ? '😡' : ''}</span>
+                >{g.kind === 'heart' ? '❤️' : g.kind === 'haha' ? '😂' : g.kind === 'wow' ? '😮' : g.kind === 'sad' ? '😢' : g.kind === 'angry' ? '😡' : g.kind === 'thumb' ? '' : ''}</span>
               ))}
             </div>
           </div>
@@ -1208,87 +1244,29 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
       )}
 
       {variant === 'rollcall' && (
-        <div class="sd-rollcall__plot">
+        <div
+          class="sd-rollcall__plot"
+          data-speakers={JSON.stringify(rcSpeakerSeats)}
+          data-desk-neutral={rcDeskNeutral}
+        >
+          <div class="sd-rollcall__wave-overlay" aria-hidden="true"></div>
           <svg viewBox={`0 0 ${rcW} ${rcH}`} preserveAspectRatio="none">
-            {/* Static seats with discrete fill animations driven by the
-                speaker cycle. Seats reserved for speakers are skipped — the
-                MP circles below render those positions instead. */}
+            {/* Static seats (non-speakers) — fill animated by JS */}
             {rcSeats.map((seat, i) => {
               if (rcSpeakerSet.has(i)) return null;
-              const timeline = rcSeatTimelines[i];
-              const allSame = timeline.every((c) => c === timeline[0]);
               return (
                 <circle
                   cx={seat.x}
                   cy={seat.y}
                   r={seat.r}
-                  fill={timeline[0]}
+                  fill={seat.party}
                   class="sd-rollcall__seat"
-                >
-                  {!allSame && (
-                    <animate
-                      attributeName="fill"
-                      values={timeline.join(';')}
-                      keyTimes={rcColorKeyTimes}
-                      dur={`${rcCycleDur}s`}
-                      repeatCount="indefinite"
-                      calcMode="discrete"
-                    />
-                  )}
-                </circle>
+                  data-idx={i}
+                />
               );
             })}
 
-            {/* Hemicyclic soundwaves — half-ellipses that grow upward from
-                the whole desk into the chamber. Three per speaker. */}
-            {rcSpeakers.flatMap((sp) =>
-              waveOffsetsSec.map((off) => {
-                const burstStart = ((off) / rcCycleDur).toFixed(5);
-                const burstMid   = ((off + waveDurSec * 0.5) / rcCycleDur).toFixed(5);
-                const burstEnd   = ((off + waveDurSec) / rcCycleDur).toFixed(5);
-                return (
-                  <ellipse
-                    cx={rcDeskX}
-                    cy={rcDeskY}
-                    rx={rcDeskHalfW}
-                    ry={rcDeskHalfH}
-                    fill="none"
-                    stroke={sp.seat.party}
-                    stroke-width="1.1"
-                    opacity="0"
-                    class="sd-rollcall__wave"
-                  >
-                    <animate
-                      attributeName="rx"
-                      values={`${rcDeskHalfW};${rcDeskHalfW};${rcW * 0.65};${rcW * 0.65}`}
-                      keyTimes={`0;${burstStart};${burstEnd};1`}
-                      dur={`${rcCycleDur}s`}
-                      repeatCount="indefinite"
-                      begin={`${sp.begin}s`}
-                    />
-                    <animate
-                      attributeName="ry"
-                      values={`${rcDeskHalfH};${rcDeskHalfH};${rcH * 1.3};${rcH * 1.3}`}
-                      keyTimes={`0;${burstStart};${burstEnd};1`}
-                      dur={`${rcCycleDur}s`}
-                      repeatCount="indefinite"
-                      begin={`${sp.begin}s`}
-                    />
-                    <animate
-                      attributeName="opacity"
-                      values={`0;0.85;0.55;0;0`}
-                      keyTimes={`0;${burstStart};${burstMid};${burstEnd};1`}
-                      dur={`${rcCycleDur}s`}
-                      repeatCount="indefinite"
-                      begin={`${sp.begin}s`}
-                    />
-                  </ellipse>
-                );
-              })
-            )}
-
-            {/* Desk — 3× thicker than before. Its fill animates to take on
-                the active speaker's party colour while they stand behind it. */}
+            {/* Desk — fill animated by JS */}
             <rect
               x={rcDeskX - rcDeskHalfW}
               y={rcDeskY - rcDeskHalfH}
@@ -1296,50 +1274,20 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
               height={rcDeskHalfH * 2}
               fill={rcDeskNeutral}
               class="sd-rollcall__desk"
-            >
-              <animate
-                attributeName="fill"
-                values={rcDeskColors}
-                keyTimes={rcDeskKeyTimes}
-                dur={`${rcCycleDur}s`}
-                repeatCount="indefinite"
-                calcMode="discrete"
-              />
-            </rect>
+            />
 
-            {/* The speaker MPs: each walks from its seat to the middle of
-                the desk (slightly behind) and back, sequentially. */}
-            {rcSpeakers.map((sp) => {
-              const sx = sp.seat.x;
-              const sy = sp.seat.y;
-              const dx = sp.dx;
-              const dy = sp.dy;
-              const party = sp.seat.party;
+            {/* Speaker MP circles — walk to desk and back via JS */}
+            {rcSpeakerSeats.map((idx) => {
+              const seat = rcSeats[idx];
               return (
                 <circle
-                  cx={sx}
-                  cy={sy}
-                  r={sp.seat.r * 1.25}
-                  fill={party}
+                  cx={seat.x}
+                  cy={seat.y}
+                  r={seat.r}
+                  fill={seat.party}
                   class="sd-rollcall__mp"
-                >
-                  <animate
-                    attributeName="cx"
-                    values={`${sx};${dx};${dx};${sx};${sx}`}
-                    keyTimes={mpKeyTimes}
-                    dur={`${rcCycleDur}s`}
-                    repeatCount="indefinite"
-                    begin={`${sp.begin}s`}
-                  />
-                  <animate
-                    attributeName="cy"
-                    values={`${sy};${dy};${dy};${sy};${sy}`}
-                    keyTimes={mpKeyTimes}
-                    dur={`${rcCycleDur}s`}
-                    repeatCount="indefinite"
-                    begin={`${sp.begin}s`}
-                  />
-                </circle>
+                  data-idx={idx}
+                />
               );
             })}
           </svg>
@@ -1369,14 +1317,14 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
     const count    = dots.length;
 
     // ── Timing ──
-    const waveCrossDur = 14.0;   // seconds for wave to cross full container
+    const waveCrossDur = 15.0;   // seconds for wave to cross full container (= dotInterval)
     const dotPulseSec  = 3.5;
     const revealSec    = 4.0;
-    const holdSec      = 4.5;
+    const holdSec      = 9.5;    // → dotInterval = 15s
     const fadeSec      = 1.0;
     const gapSec       = 0.5;
-    const newsDur      = revealSec + holdSec + fadeSec; // 9.5s
-    const dotInterval  = newsDur + gapSec;              // 10s
+    const newsDur      = revealSec + holdSec + fadeSec; // 14.5s
+    const dotInterval  = newsDur + gapSec;              // 15s
 
     // ── Ticker items ──
     const tickerEl = nfContainer.querySelector<HTMLElement>('.sd-newsfeed__ticker');
@@ -1600,14 +1548,15 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
     //    Multiply drawDur by that ratio so the rightmost point of the
     //    path is reached when the wave front passes it.
     let drawDur = 14.0 / 1.5;  // fallback
+    let waveSpeedPx = 0;  // px/s — shared with ring expansion
     const contourPlot = contourEl.querySelector<HTMLElement>('.sd-contour__plot');
     const nfBox = document.querySelector<HTMLElement>('.sd-newsfeed');
     if (contourPlot && nfBox) {
       const plotWidth = contourPlot.getBoundingClientRect().width;
       const nfW = nfBox.getBoundingClientRect().width;
       const maxRadius = nfW * 1.5;
-      const waveSpeed = maxRadius / 14.0;                    // px / s
-      const horizontalTime = plotWidth / waveSpeed;           // time for wave to cross plot
+      waveSpeedPx = maxRadius / 15.0;                        // px / s
+      const horizontalTime = plotWidth / waveSpeedPx;         // time for wave to cross plot
       const pathLengthRatio = maxLen / 1200;                  // path is longer than horizontal span
       drawDur = horizontalTime * pathLengthRatio;
     }
@@ -1622,7 +1571,11 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
     const active: ContourDraw[] = [];
 
     if (!reducedMotion) {
-      window.addEventListener('clicopre-wave', () => {
+      // Wave overlay for expanding ring
+      const waveOverlay = contourEl.querySelector<HTMLElement>('.sd-contour__wave-overlay');
+
+      window.addEventListener('clicopre-wave', ((e: CustomEvent) => {
+        const color = e.detail?.color || 'var(--c-accent)';
         const pi = nextPattern % patterns.length;
         const paths = patterns[pi].querySelectorAll<SVGPathElement>('.sd-contour__path');
         // Reset each path using its own length
@@ -1632,9 +1585,38 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
           p.style.opacity = '1';
           p.style.strokeDashoffset = `${len}`;
         });
-        active.push({ patternIdx: pi, t0: performance.now() / 1000, fading: false });
+        active.push({ patternIdx: pi, t0: performance.now() / 1000 + 0.3, fading: false });
         nextPattern++;
-      });
+
+        // Create expanding ring from left edge
+        if (waveOverlay && contourPlot) {
+          const ring = document.createElement('div');
+          ring.className = 'sd-contour__ring';
+          ring.style.borderColor = color;
+          ring.style.left = '0px';
+          ring.style.top = '50%';
+          waveOverlay.appendChild(ring);
+
+          const plotW = contourPlot.getBoundingClientRect().width;
+          const maxR = plotW * 1.5;
+          const ringT0 = performance.now() / 1000;
+          const ringDur = waveSpeedPx > 0 ? maxR / waveSpeedPx : drawDur;
+
+          (function ringTick() {
+            const dt = performance.now() / 1000 - ringT0;
+            if (dt < ringDur) {
+              const frac = dt / ringDur;
+              const r = frac * maxR;
+              ring.style.width = `${r * 2}px`;
+              ring.style.height = `${r * 2}px`;
+              ring.style.opacity = Math.max(0, 0.75 * (1 - frac * 0.6)).toFixed(2);
+              requestAnimationFrame(ringTick);
+            } else {
+              ring.remove();
+            }
+          })();
+        }
+      }) as EventListener);
 
       (function tick() {
         const t = performance.now() / 1000;
@@ -1649,16 +1631,21 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
             paths.forEach(p => {
               const len = parseInt(p.dataset.len || '1200', 10);
               p.style.strokeDashoffset = (len * (1 - frac)).toFixed(1);
+              // Start fading at 88% drawn, snap over last 12%
+              if (frac > 0.88) {
+                const fadeFrac = (frac - 0.88) / 0.12;
+                p.style.opacity = (1 - fadeFrac).toFixed(2);
+              }
             });
           } else if (!d.fading) {
-            // Draw complete — start fade
+            // Draw complete — quick final fade
             d.fading = true;
             paths.forEach(p => {
               p.style.strokeDashoffset = '0';
-              p.style.transition = `opacity ${fadeDur}s ease-out`;
+              p.style.transition = `opacity 0.3s ease-out`;
               p.style.opacity = '0';
             });
-          } else if (dt > drawDur + fadeDur + 0.1) {
+          } else if (dt > drawDur + 0.4) {
             // Fade done — clean up
             paths.forEach(p => {
               const len = parseInt(p.dataset.len || '1200', 10);
@@ -1702,7 +1689,7 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
 
     const count = dots.length;
     const pulseSec = 3.5;
-    const waveCrossDur = 14.0;        // seconds for wave to cross network (matches newsfeed)
+    const waveCrossDur = 15.0;        // seconds for wave to cross network (matches newsfeed)
 
     // ── Mobile: rescale network SVG viewBox so circles stay circular ──
     const isMobile = window.matchMedia('(max-width: 600px)').matches;
@@ -1931,56 +1918,624 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
     } // end if (!reducedMotion)
   }
 
-  // ── Rollcall mobile: rescale viewBox so circles stay circular ──
+  // ── Rollcall: JS-driven animation synced to clicopre-wave ──────
   const rcPlot = document.querySelector<HTMLElement>('.sd-rollcall__plot');
-  if (rcPlot && window.matchMedia('(max-width: 600px)').matches) {
+  if (rcPlot) {
     const rcSvg = rcPlot.querySelector('svg');
     if (rcSvg) {
-      const cW = rcPlot.clientWidth;
-      const cH = rcPlot.clientHeight;
-      const vbW = 1200;
-      const vbH = 60;
-      const newVbH = vbW * cH / cW;
-      const yScale = newVbH / vbH;
-      rcSvg.setAttribute('viewBox', `0 0 ${vbW} ${newVbH.toFixed(0)}`);
+      // ── Mobile: rescale viewBox so circles stay circular ──
+      if (window.matchMedia('(max-width: 600px)').matches) {
+        const cW = rcPlot.clientWidth;
+        const cH = rcPlot.clientHeight;
+        const vbW0 = 1200, vbH0 = 60;
+        const newVbH = vbW0 * cH / cW;
+        const yScale = newVbH / vbH0;
+        rcSvg.setAttribute('viewBox', `0 0 ${vbW0} ${newVbH.toFixed(0)}`);
 
-      // Scale y-coords of all circles (seats + MPs)
-      rcSvg.querySelectorAll<SVGCircleElement>('circle').forEach(c => {
-        const cy = parseFloat(c.getAttribute('cy') || '0');
-        c.setAttribute('cy', (cy * yScale).toFixed(1));
-        // Scale r for visibility
-        const r = parseFloat(c.getAttribute('r') || '0');
-        c.setAttribute('r', (r * 1.3).toFixed(1));
-        // Scale SMIL cy animations
-        c.querySelectorAll('animate[attributeName="cy"]').forEach(a => {
-          const vals = a.getAttribute('values');
-          if (vals) {
-            a.setAttribute('values', vals.split(';').map(v => (parseFloat(v) * yScale).toFixed(1)).join(';'));
-          }
+        rcSvg.querySelectorAll<SVGCircleElement>('circle').forEach(c => {
+          const cy = parseFloat(c.getAttribute('cy') || '0');
+          c.setAttribute('cy', (cy * yScale).toFixed(1));
+          const r = parseFloat(c.getAttribute('r') || '0');
+          c.setAttribute('r', (r * 1.3).toFixed(1));
         });
-      });
-
-      // Scale ellipses (soundwaves): cy + ry
-      rcSvg.querySelectorAll<SVGEllipseElement>('ellipse').forEach(e => {
-        const cy = parseFloat(e.getAttribute('cy') || '0');
-        const ry = parseFloat(e.getAttribute('ry') || '0');
-        e.setAttribute('cy', (cy * yScale).toFixed(1));
-        e.setAttribute('ry', (ry * yScale).toFixed(1));
-        e.querySelectorAll('animate[attributeName="ry"]').forEach(a => {
-          const vals = a.getAttribute('values');
-          if (vals) {
-            a.setAttribute('values', vals.split(';').map(v => (parseFloat(v) * yScale).toFixed(1)).join(';'));
-          }
+        rcSvg.querySelectorAll<SVGEllipseElement>('ellipse').forEach(e => {
+          const cy = parseFloat(e.getAttribute('cy') || '0');
+          const ry = parseFloat(e.getAttribute('ry') || '0');
+          e.setAttribute('cy', (cy * yScale).toFixed(1));
+          e.setAttribute('ry', (ry * yScale).toFixed(1));
         });
+        rcSvg.querySelectorAll<SVGRectElement>('rect').forEach(r => {
+          const y = parseFloat(r.getAttribute('y') || '0');
+          const h = parseFloat(r.getAttribute('height') || '0');
+          r.setAttribute('y', (y * yScale).toFixed(1));
+          r.setAttribute('height', (h * yScale).toFixed(1));
+        });
+      }
+
+      // ── Read geometry from SVG (post-mobile-rescale) ──
+      const vb = rcSvg.getAttribute('viewBox')?.split(' ').map(Number) || [0, 0, 1200, 60];
+      const vbW = vb[2], vbH = vb[3];
+
+      const rcOverlay = rcPlot.querySelector<HTMLElement>('.sd-rollcall__wave-overlay');
+      const speakerIndices: number[] = JSON.parse(rcPlot.dataset.speakers || '[]');
+      const deskNeutral = rcPlot.dataset.deskNeutral || '#c8c4b6';
+
+      const seatEls = Array.from(rcSvg.querySelectorAll<SVGCircleElement>('.sd-rollcall__seat'));
+      const mpEls   = Array.from(rcSvg.querySelectorAll<SVGCircleElement>('.sd-rollcall__mp'));
+      const deskEl  = rcSvg.querySelector<SVGRectElement>('.sd-rollcall__desk');
+
+      // MP lookup by seat index
+      const mpByIdx = new Map<number, SVGCircleElement>();
+      mpEls.forEach(el => {
+        const idx = parseInt(el.dataset.idx || '-1', 10);
+        if (idx >= 0) mpByIdx.set(idx, el);
       });
 
-      // Scale rect (desk): y + height
-      rcSvg.querySelectorAll<SVGRectElement>('rect').forEach(r => {
-        const y = parseFloat(r.getAttribute('y') || '0');
-        const h = parseFloat(r.getAttribute('height') || '0');
-        r.setAttribute('y', (y * yScale).toFixed(1));
-        r.setAttribute('height', (h * yScale).toFixed(1));
-      });
+      // Desk geometry (reads possibly-rescaled attributes)
+      const deskRectY = parseFloat(deskEl?.getAttribute('y') || '53');
+      const deskRectW = parseFloat(deskEl?.getAttribute('width') || '28');
+      const deskRectX = parseFloat(deskEl?.getAttribute('x') || '586');
+      const deskCenterX = deskRectX + deskRectW / 2;
+      const deskBehindY = deskRectY - 2;
+      const deskHW = deskRectW / 2;
+      const deskHH = parseFloat(deskEl?.getAttribute('height') || '6') / 2;
+
+      // Active SVG wave elements
+      const activeWaveEls: SVGElement[] = [];
+
+      // Hemicycle wave geometry — elliptical arcs matching the seat layout.
+      // Seats sit on ellipses centred at (600, vbH) with rx=360..590, ry=22..53.
+      // The wave expands from near-zero to beyond the outermost row.
+      const waveCx = deskCenterX;  // 600
+      const waveCy = vbH;          // bottom edge
+      // Max ellipse: slightly beyond outermost row (rx=590, ry=53)
+      const waveMaxRx = 620;
+      const waveMaxRy = 58;
+      const FRONT_SW = 2.4;        // front arc stroke-width (viewBox units)
+      const TRAIL_BANDS = 8;       // gradient bands behind front
+      const TRAIL_FRAC = 0.6;      // trail depth as fraction of current radius (~5/8)
+
+      // Elliptical arc path from angle π*0.08 to π*0.92
+      function arcPath(rx: number, ry: number): string {
+        if (rx < 2 || ry < 0.3) return '';
+        const a0 = Math.PI * 0.08;
+        const a1 = Math.PI * 0.92;
+        const x0 = waveCx + rx * Math.cos(a0);
+        const y0 = waveCy - ry * Math.sin(a0);
+        const x1 = waveCx + rx * Math.cos(a1);
+        const y1 = waveCy - ry * Math.sin(a1);
+        // sweep=0 (CCW in screen) + large-arc=0 → arc through the top toward seats
+        return `M ${x0.toFixed(1)} ${y0.toFixed(1)} A ${rx.toFixed(1)} ${ry.toFixed(1)} 0 0 0 ${x1.toFixed(1)} ${y1.toFixed(1)}`;
+      }
+
+      function spawnCssWave(color: string, delay: number, reachScale: number = 1) {
+        setTimeout(() => {
+          const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          g.setAttribute('class', 'sd-rollcall__wave-arc');
+          rcSvg.appendChild(g);
+          activeWaveEls.push(g);
+
+          // Scale wave reach by dot size
+          const scaledMaxRx = waveMaxRx * reachScale;
+          const scaledMaxRy = waveMaxRy * reachScale;
+
+          // Trail bands (drawn first so front renders on top)
+          const trails: SVGPathElement[] = [];
+          for (let b = 0; b < TRAIL_BANDS; b++) {
+            const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            p.setAttribute('stroke', color);
+            p.setAttribute('fill', 'none');
+            p.setAttribute('stroke-linecap', 'round');
+            g.appendChild(p);
+            trails.push(p);
+          }
+
+          // Front arc
+          const front = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          front.setAttribute('stroke', color);
+          front.setAttribute('stroke-width', FRONT_SW.toFixed(1));
+          front.setAttribute('fill', 'none');
+          front.setAttribute('stroke-linecap', 'round');
+          g.appendChild(front);
+
+          const wT0 = performance.now() / 1000;
+          (function wTick() {
+            const wd = performance.now() / 1000 - wT0;
+            if (wd < WAVE_DUR) {
+              const f = wd / WAVE_DUR;
+              const rx = f * scaledMaxRx;
+              const ry = f * scaledMaxRy;
+
+              // Opacity envelope
+              let op: number;
+              if (f < 0.05)      op = f / 0.05;
+              else if (f < 0.55) op = 1;
+              else               op = Math.max(0, 1 - (f - 0.55) / 0.45);
+
+              // Front arc
+              front.setAttribute('d', arcPath(rx, ry));
+              front.setAttribute('stroke-opacity', (op * 0.9).toFixed(3));
+
+              // Trail bands — proportional depth behind the leading edge
+              const trailRx = rx * TRAIL_FRAC;
+              const trailRy = ry * TRAIL_FRAC;
+              const bandStepRx = trailRx / TRAIL_BANDS;
+              const bandStepRy = trailRy / TRAIL_BANDS;
+              // stroke-width for each band (in ry units since that's the thin axis)
+              const bandSW = Math.max(0.5, trailRy / TRAIL_BANDS);
+
+              for (let b = 0; b < TRAIL_BANDS; b++) {
+                const bRx = rx - (b + 1) * bandStepRx;
+                const bRy = ry - (b + 1) * bandStepRy;
+                if (bRx > 5 && bRy > 0.5) {
+                  trails[b].setAttribute('d', arcPath(bRx, bRy));
+                  trails[b].setAttribute('stroke-width', bandSW.toFixed(2));
+                  // Opacity fades from 0.5 near front to ~0 at back
+                  const bOp = op * 0.5 * (1 - (b + 0.5) / TRAIL_BANDS);
+                  trails[b].setAttribute('stroke-opacity', bOp.toFixed(3));
+                } else {
+                  trails[b].setAttribute('d', '');
+                }
+              }
+
+              requestAnimationFrame(wTick);
+            } else {
+              g.remove();
+              const idx = activeWaveEls.indexOf(g);
+              if (idx >= 0) activeWaveEls.splice(idx, 1);
+            }
+          })();
+        }, delay * 1000);
+      }
+
+      // Spawn a concentric ring that zooms IN toward the active MP
+      function spawnFocusRing(color: string) {
+        if (!rcOverlay) return;
+        const mp = mpByIdx.get(activeIdx);
+        if (!mp) return;
+        const svgRect = rcSvg!.getBoundingClientRect();
+        const plotRect = rcPlot!.getBoundingClientRect();
+        const sx = svgRect.width / vbW;
+        const sy = svgRect.height / vbH;
+        const cx = svgRect.left - plotRect.left + parseFloat(mp.getAttribute('cx') || '0') * sx;
+        const cy = svgRect.top - plotRect.top + parseFloat(mp.getAttribute('cy') || '0') * sy;
+        const startR = 60; // start radius (px)
+        const endR = 6;    // end radius — tight on the dot
+
+        const el = document.createElement('div');
+        el.className = 'sd-rollcall__focus-ring';
+        el.style.borderColor = color;
+        el.style.left = `${cx}px`;
+        el.style.top = `${cy}px`;
+        rcOverlay.appendChild(el);
+
+        const fT0 = performance.now() / 1000;
+        (function fTick() {
+          const fd = performance.now() / 1000 - fT0;
+          if (fd < FOCUS_RING_DUR) {
+            const f = fd / FOCUS_RING_DUR;
+            // Ease-in: accelerate toward the dot
+            const ef = f * f;
+            const r = lerp(startR, endR, ef);
+            el.style.width  = `${r * 2}px`;
+            el.style.height = `${r * 2}px`;
+            // Opacity: fade in fast, hold, then vanish at end
+            let op: number;
+            if (f < 0.15)     op = f / 0.15;
+            else if (f < 0.7) op = 1;
+            else              op = Math.max(0, 1 - (f - 0.7) / 0.3);
+            el.style.opacity = (op * 0.8).toFixed(3);
+            requestAnimationFrame(fTick);
+          } else {
+            el.remove();
+          }
+        })();
+      }
+
+      // Wave speed — same as contour/newsfeed
+      let waveSpeedPx = 0;
+
+      // Emoji set (same as network divider reactions — all six Facebook reactions)
+      const RC_EMOJIS = ['❤️', '👍', '😂', '😮', '😢', '😡'];
+      const EMOJI_BURST_DUR = 1.2; // seconds for emoji to fly out and fade
+      // Blue thumb SVG (same as network's .sd-network__glyph--thumb)
+      const THUMB_SVG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><path fill='%231877f2' d='M313.4 32.9c26 5.2 42.9 30.5 37.7 56.5l-2.3 11.4c-5.3 26.7-15.1 52.1-28.8 75.2H464c26.5 0 48 21.5 48 48c0 18.5-10.5 34.6-25.9 42.6C497 275.4 504 288.9 504 304c0 23.4-16.8 42.9-38.9 47.1c4.4 7.3 6.9 15.8 6.9 24.9c0 21.3-13.9 39.4-33.1 45.6c.7 3.3 1.1 6.8 1.1 10.4c0 26.5-21.5 48-48 48H294.5c-19 0-37.5-5.6-53.3-16.1l-38.5-25.7C176 420.4 160 390.4 160 358.3V320 247.1c0-29.2 13.3-56.7 36-75.1c16.3-13.2 29.4-30 38.3-49.1L262.3 61.7c12.7-26.3 39.3-43 68.4-43c1.9 0 3.8 .1 5.7 .3zM32 192H96c17.7 0 32 14.3 32 32V448c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32V224c0-17.7 14.3-32 32-32z'/></svg>";
+
+      // Spawn emoji burst around the active MP (social media amplification)
+      function spawnEmojiBurst(count: number, color: string) {
+        if (!rcOverlay) return;
+        const mp = mpByIdx.get(activeIdx);
+        if (!mp) return;
+        const svgRect = rcSvg!.getBoundingClientRect();
+        const plotRect = rcPlot!.getBoundingClientRect();
+        const sx = svgRect.width / vbW;
+        const sy = svgRect.height / vbH;
+        const cx = svgRect.left - plotRect.left + parseFloat(mp.getAttribute('cx') || '0') * sx;
+        const cy = svgRect.top - plotRect.top + parseFloat(mp.getAttribute('cy') || '0') * sy;
+
+        for (let i = 0; i < count; i++) {
+          const emoji = RC_EMOJIS[Math.floor(Math.random() * RC_EMOJIS.length)];
+          const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.6;
+          const dist = 30 + Math.random() * 35; // start distance from dot (px)
+          const delay = Math.random() * 0.15;   // slight stagger
+
+          const el = document.createElement('span');
+          if (emoji === '👍') {
+            // Blue thumb: render as SVG background (same trick as network divider)
+            el.style.cssText = `
+              position: absolute; pointer-events: none;
+              width: 10px; height: 10px;
+              background-image: url("${THUMB_SVG}");
+              background-repeat: no-repeat; background-size: contain;
+              left: ${cx}px; top: ${cy}px;
+              transform: translate(-50%, -50%);
+              opacity: 0; z-index: 2;
+            `;
+          } else {
+            el.textContent = emoji;
+            el.style.cssText = `
+              position: absolute; pointer-events: none;
+              font-size: 10px; line-height: 1;
+              left: ${cx}px; top: ${cy}px;
+              transform: translate(-50%, -50%);
+              opacity: 0; z-index: 2;
+            `;
+          }
+          rcOverlay.appendChild(el);
+
+          const eT0 = performance.now() / 1000 + delay;
+          (function eTick() {
+            const ed = performance.now() / 1000 - eT0;
+            if (ed < 0) { requestAnimationFrame(eTick); return; }
+            if (ed < EMOJI_BURST_DUR) {
+              const f = ed / EMOJI_BURST_DUR;
+              const ef = ease(f);
+              // Fly INWARD: start at dist, converge to dot center
+              const remain = dist * (1 - ef);
+              const dx = Math.cos(angle) * remain;
+              const dy = Math.sin(angle) * remain - 4 * (1 - ef); // slight upward offset at start
+              el.style.transform = `translate(calc(-50% + ${dx.toFixed(1)}px), calc(-50% + ${dy.toFixed(1)}px))`;
+              // Fade: appear fast, hold, then fade as they arrive
+              let op: number;
+              if (f < 0.1)      op = f / 0.1;
+              else if (f < 0.6) op = 1;
+              else              op = Math.max(0, 1 - (f - 0.6) / 0.4);
+              el.style.opacity = op.toFixed(3);
+              requestAnimationFrame(eTick);
+            } else {
+              el.remove();
+            }
+          })();
+        }
+      }
+
+      const nfBoxEl = document.querySelector<HTMLElement>('.sd-newsfeed');
+      if (nfBoxEl) {
+        const nfW = nfBoxEl.getBoundingClientRect().width;
+        waveSpeedPx = (nfW * 1.5) / 15.0;
+      }
+
+      // Timing (synced to other dividers' waveCrossDur=14s, dotInterval=15s)
+      // Cycle must be < 15s to avoid drift; 12.7s leaves 2.3s buffer
+      const WAVE_CROSS_DUR = 15.0; // matches waveCrossDur = dotInterval
+      const FOCUS_DUR     = 2.5;  // concentric rings zoom onto touched MP
+      const WALK_OUT_DUR  = 2.95; // dot moves to desk
+      const SPEAK_DUR     = 5.25; // single wave with lingering (−1.5s)
+      const WALK_BACK_DUR = 1.0;
+      const WAVE_DUR      = 4.5;  // one long lingering wave
+      const WAVE_OFFSETS   = [0.0]; // single replication
+      const COLOR_SHIFT_T  = 4.0;  // near end of the lingering wave
+      const FOCUS_RINGS    = 2;
+      const FOCUS_RING_DUR = 0.5;
+
+      // Deterministic pseudo-random (same seed as old SMIL version)
+      function rcRand(i: number, j: number): number {
+        const s = Math.sin(i * 374.31 + j * 91.7) * 91283.71;
+        return s - Math.floor(s);
+      }
+
+      // ──── Color blending ────
+      function parseHex(hex: string): [number, number, number] {
+        hex = hex.replace('#', '');
+        if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+        return [
+          parseInt(hex.substring(0, 2), 16),
+          parseInt(hex.substring(2, 4), 16),
+          parseInt(hex.substring(4, 6), 16),
+        ];
+      }
+      // Convert RGB [0-255] to HSL [h:0-360, s:0-1, l:0-1]
+      function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
+        r /= 255; g /= 255; b /= 255;
+        const max = Math.max(r, g, b), min = Math.min(r, g, b);
+        const l = (max + min) / 2;
+        if (max === min) return [0, 0, l];
+        const d = max - min;
+        const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        let h = 0;
+        if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+        else if (max === g) h = ((b - r) / d + 2) / 6;
+        else h = ((r - g) / d + 4) / 6;
+        return [h * 360, s, l];
+      }
+      function hslToRgb(h: number, s: number, l: number): [number, number, number] {
+        h /= 360;
+        if (s === 0) { const v = Math.round(l * 255); return [v, v, v]; }
+        const hue2rgb = (p: number, q: number, t: number) => {
+          if (t < 0) t += 1; if (t > 1) t -= 1;
+          if (t < 1/6) return p + (q - p) * 6 * t;
+          if (t < 1/2) return q;
+          if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+          return p;
+        };
+        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        const p = 2 * l - q;
+        return [
+          Math.round(hue2rgb(p, q, h + 1/3) * 255),
+          Math.round(hue2rgb(p, q, h) * 255),
+          Math.round(hue2rgb(p, q, h - 1/3) * 255),
+        ];
+      }
+
+      function blendColors(a: string, b: string, t: number): string {
+        // Tint-blend: adopt hue+saturation from b, but keep luminance of a.
+        const [ar, ag, ab] = parseHex(a);
+        const [br, bg, bb] = parseHex(b);
+        const [, , lA] = rgbToHsl(ar, ag, ab);
+        const [hB, sB, ] = rgbToHsl(br, bg, bb);
+        // Interpolate toward b's hue/sat, preserve a's lightness
+        const [hA, sA, ] = rgbToHsl(ar, ag, ab);
+        const h = t > 0.01 ? hB : hA; // snap to target hue
+        const s = sA + (sB - sA) * t;  // blend saturation
+        const [r, g, bl] = hslToRgb(h, s, lA);
+        return `#${((1 << 24) | (r << 16) | (g << 8) | bl).toString(16).slice(1)}`;
+      }
+
+      // ──────── State machine ────────
+      let speakerRound = 0;
+      const evtQueue: { color: string }[] = [];
+      type RcState = 'IDLE' | 'RIPPLE' | 'FOCUS' | 'WALK_OUT' | 'SPEAKING' | 'WALK_BACK';
+      let state: RcState = 'IDLE';
+      let stateT0 = 0;
+      let activeIdx = -1;
+      let activeColor = '';  // raw news color
+      let blendedColor = ''; // party + news blend
+      let activeParty = '';
+      let seatX = 0, seatY = 0;
+      let rippleDur = 1.0;
+      let shifted = false;
+      let spawnedWaves: boolean[] = [false];
+      let waveOffsets: number[] = [0.0];
+      let waveReachScale = 1.0;   // 0–1 scale for wave reach
+      let colorShiftProb = 0.5;   // probability of audience color shift
+      let focusRingsSpawned = 0;
+      let emojiBurstSpawned = false;
+      let emojiCount = 0;  // random 3–12 per event
+      let inflateMax = 2;  // dynamic based on emoji count
+      let inflate1 = 1.3;  // random first-step inflate
+
+      const rcReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (!rcReducedMotion) {
+        window.addEventListener('clicopre-wave', ((e: CustomEvent) => {
+          evtQueue.push({ color: e.detail?.color || 'var(--c-accent)' });
+        }) as EventListener);
+
+        function lerp(a: number, b: number, t: number) {
+          return a + (b - a) * Math.max(0, Math.min(1, t));
+        }
+        function ease(t: number) {
+          t = Math.max(0, Math.min(1, t));
+          return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        }
+
+        function startNext(): boolean {
+          if (!evtQueue.length) return false;
+          const { color } = evtQueue.shift()!;
+          const idx = speakerIndices[speakerRound % speakerIndices.length];
+          speakerRound++;
+
+          activeIdx   = idx;
+          activeColor = color;
+          const mp = mpByIdx.get(idx);
+          activeParty = mp?.getAttribute('fill') || '#6b7985';
+          seatX = parseFloat(mp?.getAttribute('cx') || '600');
+          seatY = parseFloat(mp?.getAttribute('cy') || '30');
+
+          // Ripple time: fixed at 10% of waveCrossDur (when wave is ~10% across other dividers)
+          rippleDur = 1.0; // early concentric trigger
+          shifted = false;
+          focusRingsSpawned = 0;
+          emojiBurstSpawned = false;
+          emojiCount = 3 + Math.floor(Math.random() * 10); // 3–12 emojis
+          inflate1 = 1.15 + Math.random() * 0.35; // 1.15×–1.5×
+          inflateMax = inflate1 + (emojiCount - 3) / 9 * 0.8; // proportional: few emojis → small bump, many → big
+
+          // Scale waves, reach, and audience color shift to dot size (inflateMax)
+          // inflateMax range: ~1.15 (tiny) to ~2.3 (huge)
+          // Normalise to 0–1 for scaling
+          const sizeNorm = Math.min(1, Math.max(0, (inflateMax - 1.15) / (2.3 - 1.15)));
+          // Wave count: 1 (small) to 3 (big)
+          const nWaves = 1 + Math.floor(sizeNorm * 2.99);
+          waveOffsets = Array.from({ length: nWaves }, (_, i) => i * 0.7);
+          spawnedWaves = waveOffsets.map(() => false);
+          // Wave reach: 60% (small) to 104% (big) — median ~80%, hitting 3rd row
+          waveReachScale = 0.60 + sizeNorm * 0.44;
+          // Color shift probability: 15% (small) to 70% (big)
+          colorShiftProb = 0.15 + sizeNorm * 0.55;
+          // Blend: 55% party + 45% news
+          blendedColor = blendColors(activeParty, color, 0.45);
+          state   = 'RIPPLE';
+          stateT0 = performance.now() / 1000;
+
+          // Expanding ring from left-center (visible in narrow strip)
+          if (rcOverlay) {
+            const ring = document.createElement('div');
+            ring.className = 'sd-rollcall__ring';
+            ring.style.borderColor = color;
+            ring.style.left = '0px';
+            ring.style.top  = '50%';
+            rcOverlay.appendChild(ring);
+
+            const pw  = rcPlot!.getBoundingClientRect().width;
+            const maxR   = pw * 1.5;
+            const rDur   = waveSpeedPx > 0 ? maxR / waveSpeedPx : 10;
+            const rT0    = performance.now() / 1000;
+
+            (function rTick() {
+              const d = performance.now() / 1000 - rT0;
+              if (d < rDur) {
+                const f = d / rDur;
+                const rad = f * maxR;
+                ring.style.width   = `${rad * 2}px`;
+                ring.style.height  = `${rad * 2}px`;
+                ring.style.opacity = Math.max(0, 0.75 * (1 - f * 0.6)).toFixed(2);
+                requestAnimationFrame(rTick);
+              } else {
+                ring.remove();
+              }
+            })();
+          }
+          return true;
+        }
+
+        (function tick() {
+          const now = performance.now() / 1000;
+          const dt  = now - stateT0;
+
+          if (state === 'IDLE') {
+            if (evtQueue.length) startNext();
+          } else if (state === 'RIPPLE') {
+            // No size change during ripple — just wait for ring to reach seat
+            const mp = mpByIdx.get(activeIdx);
+            if (mp && !mp.dataset.baseR) mp.dataset.baseR = mp.getAttribute('r') || '3.875';
+            if (dt >= rippleDur) { state = 'FOCUS'; stateT0 = now; }
+          } else if (state === 'FOCUS') {
+            // Two-step inflate matching the two focus rings
+            const mp = mpByIdx.get(activeIdx);
+            if (mp) {
+              if (!mp.dataset.baseR) mp.dataset.baseR = mp.getAttribute('r') || '3.875';
+              const baseR = parseFloat(mp.dataset.baseR);
+              const ringGap = (FOCUS_DUR - FOCUS_RING_DUR) / Math.max(1, FOCUS_RINGS - 1);
+
+              // Two-step inflate: each ring triggers a pump
+              // Step 1: 0 → ringGap  (inflate 1× → inflate1×, random)
+              // Step 2: ringGap → ... (inflate1× → inflateMax×, proportional to emojis)
+              let targetR: number;
+              if (dt < ringGap) {
+                const f = ease(Math.min(1, dt / (ringGap * 0.6)));
+                targetR = lerp(baseR, baseR * inflate1, f);
+              } else {
+                const f = ease(Math.min(1, (dt - ringGap) / (FOCUS_RING_DUR * 0.8)));
+                targetR = lerp(baseR * inflate1, baseR * inflateMax, f);
+              }
+              mp.setAttribute('r', targetR.toFixed(2));
+
+              // Transition dot color: party → blended over FOCUS_DUR
+              const cf = Math.min(1, dt / FOCUS_DUR);
+              mp.setAttribute('fill', blendColors(activeParty, blendedColor, cf));
+              // Spawn concentric rings staggered + emoji burst on 2nd ring
+              while (focusRingsSpawned < FOCUS_RINGS && dt >= focusRingsSpawned * ringGap) {
+                spawnFocusRing(activeColor);
+                focusRingsSpawned++;
+                if (focusRingsSpawned === FOCUS_RINGS && !emojiBurstSpawned) {
+                  emojiBurstSpawned = true;
+                  spawnEmojiBurst(emojiCount, activeColor);
+                }
+              }
+            }
+            if (dt >= FOCUS_DUR) {
+              const mp2 = mpByIdx.get(activeIdx);
+              if (mp2) {
+                mp2.setAttribute('fill', blendedColor);
+              }
+              state = 'WALK_OUT'; stateT0 = now;
+            }
+          } else if (state === 'WALK_OUT') {
+            const mp = mpByIdx.get(activeIdx);
+            if (mp) {
+              const baseR = parseFloat(mp.dataset.baseR || '3.875');
+              const t = ease(dt / WALK_OUT_DUR);
+              mp.setAttribute('cx', lerp(seatX, deskCenterX, t).toFixed(1));
+              mp.setAttribute('cy', lerp(seatY, deskBehindY, t).toFixed(1));
+              // Shrink from inflated size down to desk size 1.6×
+              mp.setAttribute('r', lerp(baseR * inflateMax, baseR * 1.6, t).toFixed(2));
+              mp.setAttribute('fill', blendedColor);
+            }
+            if (dt >= WALK_OUT_DUR) {
+              if (deskEl) deskEl.setAttribute('fill', blendedColor);
+              state = 'SPEAKING'; stateT0 = now;
+            }
+          } else if (state === 'SPEAKING') {
+            // Pulsing deflate: inflate→deflate→inflate→deflate over SPEAK_DUR
+            const spMp = mpByIdx.get(activeIdx);
+            if (spMp) {
+              const baseR = parseFloat(spMp.dataset.baseR || '3.875');
+              // Two full pulses across SPEAK_DUR
+              const pulseCycles = 2;
+              const f = Math.min(1, dt / SPEAK_DUR);
+              // Each cycle: inflate then deflate (sine wave, amplitude decaying)
+              const decay = 1 - f;  // amplitude shrinks toward end
+              const phase = f * pulseCycles * Math.PI * 2;
+              // sin gives 0→1→0→-1→0; we use abs(sin) for pulse: big→small→big→small
+              const pulse = Math.abs(Math.sin(phase));
+              const maxR = baseR * 1.6;
+              const r = baseR + (maxR - baseR) * pulse * decay;
+              spMp.setAttribute('r', r.toFixed(2));
+            }
+
+            // Spawn CSS soundwaves in the blended color (once per offset, count/reach scaled to dot size)
+            waveOffsets.forEach((off, wi) => {
+              if (dt >= off && !spawnedWaves[wi]) {
+                spawnedWaves[wi] = true;
+                spawnCssWave(blendedColor, 0, waveReachScale);
+              }
+            });
+
+            // Seat colour shift — probability scaled to dot size
+            if (!shifted && dt >= COLOR_SHIFT_T) {
+              shifted = true;
+              seatEls.forEach(el => {
+                const si = parseInt(el.dataset.idx || '-1', 10);
+                if (si >= 0 && rcRand(si, speakerRound) < colorShiftProb) {
+                  const seatGray = el.getAttribute('fill') || '#8c8984';
+                  el.setAttribute('fill', blendColors(seatGray, activeColor, 0.6));
+                }
+              });
+            }
+
+            if (dt >= SPEAK_DUR) {
+              // Remove any lingering SVG wave arcs
+              activeWaveEls.forEach(el => el.remove());
+              activeWaveEls.length = 0;
+              if (deskEl) deskEl.setAttribute('fill', deskNeutral);
+              state = 'WALK_BACK'; stateT0 = now;
+            }
+          } else if (state === 'WALK_BACK') {
+            const mp = mpByIdx.get(activeIdx);
+            if (mp) {
+              const baseR = parseFloat(mp.dataset.baseR || '3.875');
+              const t = ease(dt / WALK_BACK_DUR);
+              mp.setAttribute('cx', lerp(deskCenterX, seatX, t).toFixed(1));
+              mp.setAttribute('cy', lerp(deskBehindY, seatY, t).toFixed(1));
+              mp.setAttribute('r', baseR.toFixed(2));
+              mp.setAttribute('fill', blendColors(blendedColor, activeParty, ease(t)));
+            }
+            if (dt >= WALK_BACK_DUR) {
+              const mp2 = mpByIdx.get(activeIdx);
+              if (mp2) {
+                mp2.setAttribute('cx', seatX.toFixed(1));
+                mp2.setAttribute('cy', seatY.toFixed(1));
+                mp2.setAttribute('fill', activeParty);
+                mp2.setAttribute('r', mp2.dataset.baseR || '3.875');
+              }
+              state = 'IDLE';
+            }
+          }
+
+          requestAnimationFrame(tick);
+        })();
+      } // end if (!rcReducedMotion)
     }
   }
 </script>
