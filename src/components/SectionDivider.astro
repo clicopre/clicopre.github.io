@@ -509,10 +509,10 @@ const rcCx = rcW / 2;
 const rcCy = rcH; // virtual centre on the bottom edge — arcs sweep upward
 
 const rcRows = [
-  { rx: 360, ry: 22, count: 44 },
-  { rx: 460, ry: 32, count: 53 },
-  { rx: 540, ry: 42, count: 62 },
-  { rx: 590, ry: 53, count: 69 },
+  { rx: 360, ry: 22, count: 35 },
+  { rx: 460, ry: 32, count: 42 },
+  { rx: 540, ry: 42, count: 50 },
+  { rx: 590, ry: 53, count: 55 },
 ];
 
 const rcParties = [
@@ -567,7 +567,7 @@ for (const row of rcRows) {
     const x = rcCx + row.rx * Math.cos(angle);
     const y = rcCy - row.ry * Math.sin(angle);
     const partyIdx = Math.min(rcParties.length - 1, Math.floor(t * rcParties.length));
-    rcSeats.push({ x, y, r: 2.48, party: rcParties[partyIdx] });
+    rcSeats.push({ x, y, r: 3.1, party: rcParties[partyIdx] });
   }
 }
 
@@ -580,7 +580,7 @@ const rcDeskY = rcH - 4;
 // Eight speakers cycling. Sequential timing; the cycle then loops.
 // Walks are 2× slower than before; soundwaves are 3× slower (so the
 // desk stay is extended to fit three of them).
-const rcSpeakerSeats = [12, 200, 73, 158, 38, 102, 22, 215];
+const rcSpeakerSeats = [10, 160, 58, 126, 30, 81, 18, 172];
 const rcSpeakerSet = new Set(rcSpeakerSeats);
 const rcWalkOut = 2.4;
 const rcDeskStay = 12.0;
