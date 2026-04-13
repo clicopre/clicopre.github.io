@@ -12,6 +12,7 @@
     "shoot": "node scripts/screenshot.mjs"
   },
   "dependencies": {
+    "@astrojs/rss": "^4.0.18",
     "@astrojs/sitemap": "3.2.1",
     "astro": "^4.16.0"
   },

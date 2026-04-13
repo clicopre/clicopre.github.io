@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import SectionDivider from '../components/SectionDivider.astro';
+import { getCollection } from 'astro:content';
 
 const pillars = [
   {
@@ -46,8 +47,15 @@ const outputStreams = [
   { label: 'Code',       hint: 'Analysis code repositories will be linked here on first release.', items: [] },
 ];
 
-// Updates / blog. Empty for now — the visual list pattern is in place.
-const updates: { date: string; title: string; excerpt: string; href?: string }[] = [];
+// Updates / blog — auto-populated from src/content/updates/*.md
+const updatePosts = await getCollection('updates', ({ data }) => !data.draft);
+const updates = updatePosts
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .map((p) => ({
+    date: p.data.date.toISOString().slice(0, 10),
+    title: p.data.title,
+    excerpt: p.data.excerpt,
+  }));
 ---
 
 <Layout>

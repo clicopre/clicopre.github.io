@@ -1,0 +1,19 @@
+/* TEAM */
+
+Principal Investigator: Duccio Gamannossi degl'Innocenti
+Site: https://www.dgdi.me
+Location: Padua, Italy / Cambridge, MA
+
+/* SITE */
+
+Standards: HTML5, CSS3, SVG
+Software: Astro
+Fonts: Fraunces, IBM Plex Sans, IBM Plex Mono (Google Fonts)
+Analytics: GoatCounter (privacy-friendly, no cookies)
+
+/* PROJECT */
+
+Name: CLICOPRE — Climate Communication & Political Response
+Funding: Marie Skłodowska-Curie Actions — Seal of Excellence at the University of Padua
+Contribution: Fondazione Cassa di Risparmio di Padova e Rovigo
+Period: 2026–2029

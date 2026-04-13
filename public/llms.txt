@@ -1,0 +1,45 @@
+# CLICOPRE — Climate Communication & Political Response
+
+> CLICOPRE studies how extreme weather events shape climate-related
+> communication by politicians and news outlets on social media, and
+> whether these shocks influence political action, legislative activity,
+> and voting behaviour in the EU and the US.
+
+## Project details
+
+- Full name: Climate Communication & Political Response (CLICOPRE)
+- Principal Investigator: Duccio Gamannossi degl'Innocenti
+- Affiliations: University of Padua (inbound); Harvard University (outbound)
+- Funding: Marie Skłodowska-Curie Actions — Seal of Excellence at the University of Padua, with the contribution of Fondazione Cassa di Risparmio di Padova e Rovigo
+- Period: 2026–2029
+- Website: https://clicopre.github.io
+
+## Research agenda
+
+The project is organised around three intertwined questions:
+
+1. **Climate Communication** — Measuring how extreme weather events reshape climate communication by politicians and news outlets on social media, and how audiences respond.
+2. **Legislative Activity** — Tracing whether weather-driven shifts in attention translate into climate-policy activity in the European Parliament and the US Congress.
+3. **Voting & Accountability** — Assessing whether voters reward substantive policy responses over rhetoric on climate issues, and whether communication complements or substitutes for action.
+
+## Methods & data
+
+- Data: Large-scale social media data, news-outlet profiles, parliamentary records, and high-resolution weather information.
+- Methods: NLP and AI models combined with causal-inference designs that leverage the timing and intensity of weather shocks.
+- Coverage: 15 EU countries and the US, 2000–2024.
+- Outputs: Working papers, replication code, open datasets, policy-facing writing, and interactive evidence interfaces.
+
+## Sections
+
+- [Research agenda](https://clicopre.github.io/#research)
+- [Methods & data](https://clicopre.github.io/#approach)
+- [People & institutions](https://clicopre.github.io/#people)
+- [Outputs](https://clicopre.github.io/#outputs)
+- [Updates](https://clicopre.github.io/#updates)
+- [Contact](https://clicopre.github.io/#contact)
+
+## Contact
+
+- Email: clicopre-AT-gmail.com
+- Address (inbound): Department of Economics and Management "Marco Fanno", Università di Padova, Via del Santo 33, 35123 Padova, Italy
+- Address (outbound): Department of Government, Harvard University, CGIS Knafel Building, 1737 Cambridge Street, Cambridge, MA 02138

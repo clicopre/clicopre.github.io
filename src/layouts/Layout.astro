@@ -53,6 +53,10 @@ const jsonLd = {
       '@id': `${siteUrl}/#pi`,
       name: 'Duccio Gamannossi degl’Innocenti',
       jobTitle: 'Principal Investigator',
+      sameAs: [
+        'https://orcid.org/0000-0002-3653-216X',
+        'https://www.dgdi.me',
+      ],
       affiliation: [
         { '@type': 'Organization', name: 'Università degli Studi di Padova' },
         { '@type': 'Organization', name: 'Harvard University' },
@@ -69,12 +73,21 @@ const jsonLd = {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
     <meta name="robots" content="index, follow" />
+    <meta name="author" content="Duccio Gamannossi degl'Innocenti" />
     <meta name="keywords" content="climate communication, extreme weather, political response, NLP, causal inference, EU, US, MSCA, Marie Curie, University of Padua, Harvard" />
     <meta name="theme-color" content="#f4f1e8" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#141110" media="(prefers-color-scheme: dark)" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Preload the display font to cut LCP -->
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="https://fonts.gstatic.com/s/fraunces/v38/6NUV8FyLNQOQZAnv9ZwHlOkuy91BRtw.woff2"
+      crossorigin
+    />
     <!-- Default theme: Fraunces + IBM Plex Sans + IBM Plex Mono.
          Alternative themes load Newsreader/Literata/JetBrains Mono (Dispatch),
          Instrument Serif/Manrope/Space Mono (Frequency),
@@ -86,6 +99,12 @@ const jsonLd = {
     />
     <title>{title}</title>
 
+    <!-- LLM-friendly site summary -->
+    <link rel="alternate" type="text/markdown" title="LLM site summary" href="/llms.txt" />
+
+    <!-- RSS feed -->
+    <link rel="alternate" type="application/rss+xml" title="CLICOPRE — Updates" href="/rss.xml" />
+
     <!-- If JS is disabled, scroll-reveal stays open instead of leaving content invisible. -->
     <noscript>
       <style>.reveal { opacity: 1 !important; transform: none !important; }</style>
@@ -96,6 +115,7 @@ const jsonLd = {
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_US" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={siteUrl + '/'} />
@@ -110,6 +130,13 @@ const jsonLd = {
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImage} />
+
+    <!-- Google Scholar / academic indexing -->
+    <meta name="citation_title" content="CLICOPRE — Climate Communication & Political Response" />
+    <meta name="citation_author" content="Gamannossi degl'Innocenti, Duccio" />
+    <meta name="citation_publication_date" content="2026" />
+    <meta name="citation_abstract" content={description} />
+    <meta name="citation_language" content="en" />
 
     <!-- Schema.org JSON-LD -->
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
