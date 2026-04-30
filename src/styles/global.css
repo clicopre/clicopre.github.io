@@ -1144,6 +1144,7 @@ section.deep { background: var(--c-bg-deep); }
   inset: 0;
   pointer-events: none;
   overflow: hidden;
+  contain: paint;
 }
 .sd-network__wave-ring {
   position: absolute;
@@ -1280,6 +1281,7 @@ section.deep { background: var(--c-bg-deep); }
   inset: 0;
   pointer-events: none;
   overflow: hidden;
+  contain: paint;
   z-index: 1;
 }
 .sd-nf-cross-ring {

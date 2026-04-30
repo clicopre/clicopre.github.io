@@ -320,29 +320,6 @@ const updates = updatePosts
 
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // ── Parallax on section dividers ──
-  if (!reducedMotion) {
-    const dividers = document.querySelectorAll<HTMLElement>('[class*="sd-"][class*="__plot"], [class*="sd-"][class*="__globe"]');
-    if (dividers.length) {
-      let ticking = false;
-      window.addEventListener('scroll', () => {
-        if (ticking) return;
-        ticking = true;
-        requestAnimationFrame(() => {
-          const vh = window.innerHeight;
-          dividers.forEach((el) => {
-            const rect = el.getBoundingClientRect();
-            if (rect.bottom > 0 && rect.top < vh) {
-              const center = (rect.top + rect.height / 2) / vh - 0.5; // -0.5 to 0.5
-              el.style.transform = `translateY(${center * -12}px)`;
-            }
-          });
-          ticking = false;
-        });
-      }, { passive: true });
-    }
-  }
-
   // ── Typing reveal on hero title italic ──
   if (!reducedMotion) {
     const em = document.querySelector<HTMLElement>('.hero__title em');
