@@ -194,6 +194,15 @@ const jsonLd = {
       }
     </script>
 
+    <script>
+      // Inject mailto href into obfuscated email links (keeps address out of HTML text nodes).
+      document.querySelectorAll<HTMLAnchorElement>('.obf-email').forEach((a) => {
+        if (a.dataset.u && a.dataset.d) {
+          a.href = 'mailto:' + a.dataset.u + '@' + a.dataset.d;
+        }
+      });
+    </script>
+
     <style>
       .skip-link {
         position: absolute;

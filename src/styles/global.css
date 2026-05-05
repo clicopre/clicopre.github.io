@@ -1403,6 +1403,21 @@ section.deep { background: var(--c-bg-deep); }
 }
 
 /* ------------------------------------------------------------------ */
+/* Email obfuscation                                                   */
+/* ------------------------------------------------------------------ */
+.obf-email {
+  color: inherit;
+  text-decoration: none;
+}
+.obf-email::before {
+  content: attr(data-u) "\0040" attr(data-d);
+}
+.obf-email:hover {
+  color: var(--c-teal-deep);
+  text-decoration: underline;
+}
+
+/* ------------------------------------------------------------------ */
 /* Print                                                               */
 /* ------------------------------------------------------------------ */
 @media print {
@@ -1418,6 +1433,8 @@ section.deep { background: var(--c-bg-deep); }
   .reveal { opacity: 1 !important; transform: none !important; }
   a[href]::after { content: " (" attr(href) ")"; font-size: 0.85em; color: #555; }
   a.brand::after { content: none; }
+  .obf-email::after { content: none !important; }
+  .obf-email::before { content: attr(data-u) "@" attr(data-d); }
   section { break-inside: avoid; }
 }
 
