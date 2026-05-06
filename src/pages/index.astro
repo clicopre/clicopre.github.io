@@ -183,7 +183,7 @@ const updates = updatePosts
         <div class="section-rail">
           <span class="section-marker">§ III — People &amp; institutions</span>
         </div>
-        <h2>Hosted at the <strong>University of Padua</strong> and <strong>Harvard University</strong>.</h2>
+        <h2>Hosted at the <strong><span class="inst inst--unipd">University of Padua</span></strong> and <strong><span class="inst inst--harvard">Harvard University</span></strong>.</h2>
       </header>
       <div class="reveal" data-delay="1">
         <p>
@@ -640,6 +640,10 @@ const updates = updatePosts
   .two-col .section-head { margin-bottom: 0; }
   .two-col p { max-width: var(--max-w-prose); }
   .two-col strong { color: var(--c-ink); font-weight: 500; }
+
+  /* Institution name brand colours — Rosso Padova / Harvard Crimson */
+  .inst--unipd   { color: #9B0014; }
+  .inst--harvard { color: #A51C30; }
 
   /* Lighten section headings so the display face feels less heavy. */
   .section-head h2 {
