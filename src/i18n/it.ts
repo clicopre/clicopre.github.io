@@ -17,9 +17,9 @@ export const it: Translations = {
 
   hero: {
     eyebrow: 'Shock climatici · Comunicazione · Risposta di policy',
-    titleEm: 'Eventi meteo estremi.',
-    titleRest: 'Il loro impatto sulla comunicazione climatica e sulle risposte di policy.',
-    lede: 'CLICOPRE studia come gli eventi meteorologici estremi influenzino il dibattito pubblico sul clima, analizzando l\’attività sui social media di politici e testate giornalistiche, le reazioni degli utenti e gli effetti di questi shock sull\’attività legislativa e sul comportamento di voto nell\’Unione Europea e negli Stati Uniti.',
+    titleEm: 'Eventi meteo estremi',
+    titleRest: 'e impatto sulla comunicazione climatica e sulle risposte di policy.',
+    lede: 'CLICOPRE studia come gli eventi meteorologici estremi influenzino il dibattito pubblico sul clima, analizzando l\’attività sui social media di politici e testate giornalistiche, ed investigando come questi shock impattino sull\’attività legislativa e sul comportamento di voto nell\’Unione Europea e negli Stati Uniti.',
     ctaPrimary: 'Domande di ricerca',
     ctaSecondary: 'Metodi e dati',
   },
@@ -35,7 +35,7 @@ export const it: Translations = {
 
   research: {
     marker: '§ I — Agenda di ricerca',
-    heading: 'Tre domande interconnesse su clima, attenzione e risposta democratica.',
+    heading: 'Tre domande interconnesse su clima, dibattito pubblico e risposta democratica.',
     pillars: [
       {
         n: '01',
@@ -46,7 +46,7 @@ export const it: Translations = {
       {
         n: '02',
         title: 'Attività Legislativa',
-        body: 'Verificare se i cambiamenti nell\'attenzione generati dagli shock meteo si traducano in misure di politica climatica al Parlamento Europeo e al Congresso degli Stati Uniti.',
+        body: 'Verificare se i cambiamenti nel dibattito pubblico generati dagli shock meteo si traducano in misure di politica climatica al Parlamento Europeo e al Congresso degli Stati Uniti.',
         keys: ['Voti nominali', 'Proposta di disegni di legge', 'Metodi causali'],
       },
       {
@@ -64,7 +64,7 @@ export const it: Translations = {
     items: [
       {
         label: 'Dati',
-        text: 'Dati dei social media su larga scala, profili di testate giornalistiche, documenti parlamentari e informazioni meteorologiche ad alta risoluzione.',
+        text: 'Dati dei social media su larga scala, documenti parlamentari e informazioni meteorologiche ad alta risoluzione.',
       },
       {
         label: 'Metodi',
@@ -83,8 +83,8 @@ export const it: Translations = {
     headingUnipd: 'Università di Padova',
     headingMid: 'e a',
     headingHarvard: 'Harvard University',
-    para1Pre: 'CLICOPRE è guidato da',
-    para1Post: ' ricercatore postdoc in economia con interessi di ricerca in economia pubblica, economia politica, clima e media.',
+    para1Pre: 'CLICOPRE è un progetto di',
+    para1Post: ' ppostdoc in economia, con interessi di ricerca in economia pubblica, economia politica, clima e media.',
     para2Pre: 'Il progetto è finanziato dal programma',
     para2Mid1: '. La fase inbound è ospitata presso il',
     para2DeptName: 'Dipartimento di Scienze Economiche e Aziendali "Marco Fanno"',
@@ -119,7 +119,7 @@ export const it: Translations = {
   },
 
   footer: {
-    tag: 'Comunicazione climatica e risposta politica agli eventi meteorologici estremi',
+    tag: 'Comunicazione climatica e risposte di policy agli eventi meteorologici estremi',
     projectHeading: 'Progetto',
     navLinks: {
       research: 'Domande di ricerca',

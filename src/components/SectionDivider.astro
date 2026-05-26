@@ -43,22 +43,22 @@ const contourPalette = [
   '#6b3fa0', '#4a8c3a', '#c44535', '#0e1d28',
 ];
 const contourCountries = [
-  { code: 'BE',  label: 'Belgium',        color: contourPalette[0], thin: false },
-  { code: 'CZ',  label: 'Czechia',        color: contourPalette[1], thin: false },
-  { code: 'DK',  label: 'Denmark',        color: contourPalette[2], thin: false },
-  { code: 'FI',  label: 'Finland',        color: contourPalette[3], thin: false },
-  { code: 'FR',  label: 'France',         color: contourPalette[4], thin: false },
-  { code: 'DE',  label: 'Germany',        color: contourPalette[5], thin: false },
-  { code: 'IE',  label: 'Ireland',        color: contourPalette[6], thin: false },
-  { code: 'IT',  label: 'Italy',          color: contourPalette[7], thin: false },
-  { code: 'NL',  label: 'Netherlands',    color: contourPalette[0], thin: true },
-  { code: 'PL',  label: 'Poland',         color: contourPalette[1], thin: true },
-  { code: 'PT',  label: 'Portugal',       color: contourPalette[2], thin: true },
-  { code: 'RO',  label: 'Romania',        color: contourPalette[3], thin: true },
-  { code: 'SK',  label: 'Slovakia',       color: contourPalette[4], thin: true },
-  { code: 'ES',  label: 'Spain',          color: contourPalette[5], thin: true },
-  { code: 'UK',  label: 'United Kingdom', color: contourPalette[6], thin: true },
-  { code: 'US',  label: 'United States',  color: contourPalette[7], thin: true },
+  { code: 'BE',  codeIt: 'BE',  label: 'Belgium',        color: contourPalette[0], thin: false },
+  { code: 'CZ',  codeIt: 'CE',  label: 'Czechia',        color: contourPalette[1], thin: false },
+  { code: 'DK',  codeIt: 'DA',  label: 'Denmark',        color: contourPalette[2], thin: false },
+  { code: 'FI',  codeIt: 'FI',  label: 'Finland',        color: contourPalette[3], thin: false },
+  { code: 'FR',  codeIt: 'FR',  label: 'France',         color: contourPalette[4], thin: false },
+  { code: 'DE',  codeIt: 'GE',  label: 'Germany',        color: contourPalette[5], thin: false },
+  { code: 'IE',  codeIt: 'IR',  label: 'Ireland',        color: contourPalette[6], thin: false },
+  { code: 'IT',  codeIt: 'IT',  label: 'Italy',          color: contourPalette[7], thin: false },
+  { code: 'NL',  codeIt: 'PA',  label: 'Netherlands',    color: contourPalette[0], thin: true },
+  { code: 'PL',  codeIt: 'PO',  label: 'Poland',         color: contourPalette[1], thin: true },
+  { code: 'PT',  codeIt: 'PO',  label: 'Portugal',       color: contourPalette[2], thin: true },
+  { code: 'RO',  codeIt: 'RO',  label: 'Romania',        color: contourPalette[3], thin: true },
+  { code: 'SK',  codeIt: 'SL',  label: 'Slovakia',       color: contourPalette[4], thin: true },
+  { code: 'ES',  codeIt: 'SP',  label: 'Spain',          color: contourPalette[5], thin: true },
+  { code: 'GB',  codeIt: 'RE',  label: 'United Kingdom', color: contourPalette[6], thin: true },
+  { code: 'US',  codeIt: 'ST',  label: 'United States',  color: contourPalette[7], thin: true },
 ];
 
 // Round-robin schedule: 10 loops × 5 country indices each, picked from
@@ -890,7 +890,7 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
         <div class="sd-contour" style={`--contour-cycle:${contourCycleDur}s; --contour-draw-stop:${contourDrawStop}%; --contour-hold-stop:${contourHoldStop}%; --contour-len:${contourMaxLen}`}>
           <div class="sd-contour__chart">
             <div class="sd-contour__yaxis-wrap" aria-hidden="true">
-              <span class="sd-contour__yaxis-label">ENGAGEMENT</span>
+              <span class="sd-contour__yaxis-label">{lang === 'it' ? 'COINVOLGIMENTO' : 'ENGAGEMENT'}</span>
               <ul class="sd-contour__yaxis">
                 <li>100%</li>
                 <li>50%</li>
@@ -931,11 +931,11 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
                       stroke-width={c.thin ? '1.2' : '3'}
                       stroke-dasharray="none" />
                   </svg>
-                  <span class="sd-contour__code">{c.code}</span>
+                  <span class="sd-contour__code">{lang === 'it' ? `${c.codeIt} · ${c.code}` : c.code}</span>
                 </li>
               ))}
             </ul>
-            <span class="sd-contour__time" aria-hidden="true">TIME</span>
+            <span class="sd-contour__time" aria-hidden="true">{lang === 'it' ? 'TEMPO' : 'TIME'}</span>
           </div>
 
         </div>
@@ -944,7 +944,7 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
       {variant === 'policy' && (
         <div class="sd-policy" style={`--policy-dur: ${policyDur}s`}>
           <div class="sd-policy__ylabel">
-            <span>CO₂ EMISSIONS</span>
+            <span>{lang === 'it' ? 'EMISSIONI CO₂' : 'CO₂ EMISSIONS'}</span>
           </div>
           <div class="sd-policy__viewport">
             <div class="sd-policy__scroll">
@@ -972,12 +972,12 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
               ))}
             </div>
           </div>
-          <span class="sd-policy__time" aria-hidden="true">TIME</span>
+          <span class="sd-policy__time" aria-hidden="true">{lang === 'it' ? 'TEMPO' : 'TIME'}</span>
           <div class="sd-policy__vlegend">
-            <span class="sd-policy__vlegend-title">CLIMATE<br/>POLICY</span>
-            <span class="sd-policy__vlegend-label">Strong</span>
+            <span class="sd-policy__vlegend-title">{lang === 'it' ? 'POLITICA' : 'CLIMATE'}<br/>{lang === 'it' ? 'CLIMATICA' : 'POLICY'}</span>
+            <span class="sd-policy__vlegend-label">{lang === 'it' ? 'Forte' : 'Strong'}</span>
             <div class="sd-policy__vlegend-bar"></div>
-            <span class="sd-policy__vlegend-label">Weak</span>
+            <span class="sd-policy__vlegend-label">{lang === 'it' ? 'Debole' : 'Weak'}</span>
           </div>
         </div>
       )}
