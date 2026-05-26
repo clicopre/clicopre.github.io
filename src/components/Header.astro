@@ -1,14 +1,16 @@
 ---
 import SignatureStrip from './SignatureStrip.astro';
+import LangToggle from './LangToggle.astro';
+import { en, it } from '../i18n';
+import type { Lang, Translations } from '../i18n';
 
-const nav = [
-  { href: '#research', label: 'Research', n: 'I'   },
-  { href: '#approach', label: 'Approach', n: 'II'  },
-  { href: '#people',   label: 'People',   n: 'III' },
-  { href: '#outputs',  label: 'Outputs',  n: 'IV'  },
-  { href: '#updates',  label: 'Updates',  n: 'V'   },
-  { href: '#contact',  label: 'Contact',  n: 'VI'  },
-];
+interface Props {
+  lang?: Lang;
+  t?: Translations;
+}
+const { lang = 'en', t: tProp } = Astro.props;
+const t = tProp ?? (lang === 'it' ? it : en);
+const nav = t.nav;
 ---
 
 <header class="site-header" data-nav-open="false">
@@ -34,6 +36,8 @@ const nav = [
         ))}
       </ul>
     </nav>
+
+    <LangToggle lang={lang} />
 
     <button
       class="nav-toggle"
@@ -166,9 +170,14 @@ const nav = [
     padding-block: 1.1rem 1.05rem;
   }
 
-  /* Push the mobile toggle / right-side controls to the far right. */
+  /* Push nav to far right; LangToggle + toggle follow naturally. */
   .site-header__inner > .nav-toggle { margin-left: auto; }
   .site-header__inner > .site-nav--inline { margin-left: auto; }
+
+  /* On mobile, collapse the lang toggle next to the hamburger */
+  @media (max-width: 760px) {
+    .site-header__inner > .lang-toggle { margin-left: auto; }
+  }
 
   /* ── Brand wordmark — single-line caps editorial wordmark ────── */
   .brand {

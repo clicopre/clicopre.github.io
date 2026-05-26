@@ -1,16 +1,22 @@
 ---
 import SignatureStrip from './SignatureStrip.astro';
+import { en, it } from '../i18n';
+import type { Lang, Translations } from '../i18n';
 
-// Institutional context. Each tile is a "labelled slot" — when real SVG
-// logos are dropped into brand_assets/institutions/, swap the text for
-// <img>. The label/role is what gives the strip its rhythm even before
-// the marks arrive.
+interface Props {
+  lang?: Lang;
+  t?: Translations;
+}
+const { lang = 'en', t: tProp } = Astro.props;
+const t = tProp ?? (lang === 'it' ? it : en);
+
+// Institutional data — roles are localised via t.footer.institutionRoles,
+// names/logos are language-neutral (proper nouns / SVG marks).
 const institutions = [
-  { role: 'Host-inbound',       name: 'University of Padua',   long: 'University of Padua' },
-  { role: 'Host-outbound',     name: 'Harvard University',     long: 'Harvard University' },
-  { role: 'Funding Scheme',     name: 'MSCA Seal of Excellence@UNIPD', long: 'Marie Skłodowska-Curie Actions — Seal of Excellence' },
+  { name: 'University of Padua',              long: 'University of Padua' },
+  { name: 'Harvard University',               long: 'Harvard University' },
+  { name: 'MSCA Seal of Excellence@UNIPD',    long: 'Marie Skłodowska-Curie Actions — Seal of Excellence' },
   {
-    role: 'Funder',
     long: 'Fondazione Cassa di Risparmio di Padova e Rovigo',
     href: 'https://fondazionecariparo.it/',
     logo: '/institutions/cariparo-logo.svg',
@@ -29,35 +35,33 @@ const year = new Date().getFullYear();
         <a class="brand" href="/" aria-label="CLICOPRE — home">
           <span class="brand__word">CLICOPRE</span>
         </a>
-        <p class="site-footer__tag">
-          Climate communication and policy responses to extreme weather events
-        </p>
+        <p class="site-footer__tag">{t.footer.tag}</p>
       </div>
 
       <div>
-        <h4>Project</h4>
+        <h4>{t.footer.projectHeading}</h4>
         <ul class="site-footer__list">
-          <li><a href="#research">Main research questions</a></li>
-          <li><a href="#approach">Approach</a></li>
-          <li><a href="#outputs">Outputs</a></li>
-          <li><a href="#updates">Updates</a></li>
-          <li><a href="#contact">Contact</a></li>
+          <li><a href="#research">{t.footer.navLinks.research}</a></li>
+          <li><a href="#approach">{t.footer.navLinks.approach}</a></li>
+          <li><a href="#outputs">{t.footer.navLinks.outputs}</a></li>
+          <li><a href="#updates">{t.footer.navLinks.updates}</a></li>
+          <li><a href="#contact">{t.footer.navLinks.contact}</a></li>
         </ul>
       </div>
 
       <div class="site-footer__contact-col">
-        <h4>Contact</h4>
+        <h4>{t.footer.contactHeading}</h4>
         <p class="site-footer__contact">
           <a class="obf-email" data-u="info" data-d="clicopre.com" href="#"></a>
         </p>
         <p class="site-footer__address">
-          <strong>Department of Economics and Management &ldquo;Marco Fanno&rdquo;</strong>
+          <strong>{t.footer.deptUnipd}</strong>
           Università di Padova<br />
           Via del Santo 33<br />
           35123 Padova, Italy
         </p>
         <p class="site-footer__address">
-          <strong>Department of Government</strong>
+          <strong>{t.footer.deptHarvard}</strong>
           Harvard University<br />
           CGIS Knafel Building<br />
           1737 Cambridge Street<br />
@@ -69,11 +73,11 @@ const year = new Date().getFullYear();
     <!-- Institutional strip — labelled tiles. Real SVG logos drop into
          brand_assets/institutions/ and replace the .institutions__name text. -->
     <section class="institutions" aria-label="Hosted and supported by">
-      <h4 class="institutions__heading">Hosted &amp; supported by</h4>
+      <h4 class="institutions__heading">{t.footer.hostedBy}</h4>
       <ul class="institutions__grid">
-        {institutions.map((i) => (
+        {institutions.map((i, idx) => (
           <li class="institutions__tile">
-            <span class="institutions__role">{i.role}</span>
+            <span class="institutions__role">{t.footer.institutionRoles[idx] ?? ''}</span>
               {i.logo ? (
                 <a
                   class="institutions__logo-link"
@@ -104,7 +108,7 @@ const year = new Date().getFullYear();
 
     <div class="site-footer__meta">
       <p class="meta-line">© {year} CLICOPRE · Duccio Gamannossi degl’Innocenti</p>
-      <a class="back-to-top" href="#">↑ Back to top</a>
+      <a class="back-to-top" href="#">{t.footer.backToTop}</a>
     </div>
   </div>
 </footer>

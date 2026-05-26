@@ -1,0 +1,73 @@
+---
+import type { Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+---
+
+<nav class="lang-toggle" aria-label="Language / Lingua">
+  <a
+    href="/"
+    class="lang-toggle__opt"
+    hreflang="en"
+    aria-current={lang === 'en' ? 'page' : undefined}
+    data-lang="en"
+  >EN</a>
+  <a
+    href="/it/"
+    class="lang-toggle__opt"
+    hreflang="it"
+    aria-current={lang === 'it' ? 'page' : undefined}
+    data-lang="it"
+  >IT</a>
+</nav>
+
+<script>
+  // Save preference and scroll position on toggle so returning visitors land
+  // on their last language and the same vertical position.
+  document.querySelectorAll<HTMLAnchorElement>('.lang-toggle__opt').forEach((a) => {
+    a.addEventListener('click', () => {
+      localStorage.setItem('clicopre-lang', a.dataset.lang ?? 'en');
+      sessionStorage.setItem('clicopre-scroll', String(window.scrollY));
+    });
+  });
+</script>
+
+<style>
+  .lang-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+    flex-shrink: 0;
+  }
+  .lang-toggle__opt {
+    font-family: var(--f-mono);
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--c-ink-muted);
+    padding: 0.3rem 0.55rem;
+    line-height: 1;
+    border-radius: 3px;
+    transition: color 0.2s ease, background 0.2s ease;
+  }
+  .lang-toggle__opt:hover,
+  .lang-toggle__opt:focus-visible {
+    color: var(--c-ink-soft);
+  }
+  .lang-toggle__opt[aria-current="page"] {
+    background: var(--c-teal-soft);
+    color: var(--c-teal-deep);
+  }
+  .lang-toggle__opt[aria-current="page"]:hover {
+    color: var(--c-teal-deep);
+  }
+  .lang-toggle__opt:focus-visible {
+    outline: 2px solid var(--c-teal-deep);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+</style>

@@ -3,15 +3,20 @@ import '../styles/global.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import ThemeSwitcher from '../components/ThemeSwitcher.astro';
+import type { Lang, Translations } from '../i18n';
 
 interface Props {
   title?: string;
   description?: string;
+  lang?: Lang;
+  t?: Translations;
 }
 
 const {
   title = 'CLICOPRE — Climate Communication & Political Response',
   description = 'CLICOPRE studies how extreme weather events shape climate communication and political response in the EU and the US. A research project by Duccio Gamannossi degl\u2019Innocenti (University of Padua, Harvard University).',
+  lang = 'en',
+  t,
 } = Astro.props;
 
 const siteUrl = 'https://clicopre.github.io';
@@ -67,7 +72,7 @@ const jsonLd = {
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={lang}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -114,8 +119,13 @@ const jsonLd = {
     <link rel="canonical" href={siteUrl + '/'} />
 
     <!-- Open Graph -->
+    <!-- hreflang — both language versions always reference each other -->
+    <link rel="alternate" hreflang="en" href={siteUrl + '/'} />
+    <link rel="alternate" hreflang="it" href={siteUrl + '/it/'} />
+    <link rel="alternate" hreflang="x-default" href={siteUrl + '/'} />
+
     <meta property="og:type" content="website" />
-    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale" content={lang === 'it' ? 'it_IT' : 'en_US'} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={siteUrl + '/'} />
@@ -143,12 +153,37 @@ const jsonLd = {
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
-    <Header />
+    <Header lang={lang} t={t} />
     <main id="main">
       <slot />
     </main>
-    <Footer />
+    <Footer lang={lang} t={t} />
     <ThemeSwitcher />
+
+    <!-- Language-preference redirect — only fires on first visit after explicit toggle -->
+    <script define:vars={{ currentLang: lang }}>
+      (function () {
+        const stored = localStorage.getItem('clicopre-lang');
+        if (!stored || stored === currentLang) return;
+        const onIt = location.pathname.startsWith('/it');
+        if (stored === 'it' && !onIt) {
+          location.replace('/it/' + location.hash);
+        } else if (stored === 'en' && onIt) {
+          location.replace('/' + location.hash);
+        }
+      })();
+    </script>
+
+    <!-- Restore scroll position after language toggle -->
+    <script>
+      (function () {
+        const y = sessionStorage.getItem('clicopre-scroll');
+        if (!y) return;
+        sessionStorage.removeItem('clicopre-scroll');
+        // Use rAF to ensure layout is painted before scrolling
+        requestAnimationFrame(() => window.scrollTo({ top: parseInt(y, 10), behavior: 'instant' }));
+      })();
+    </script>
 
     <!-- GoatCounter — privacy-friendly analytics, no cookies, no consent banner -->
     <script data-goatcounter="https://clicopre.goatcounter.com/count"

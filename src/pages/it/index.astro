@@ -1,14 +1,11 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import SectionDivider from '../components/SectionDivider.astro';
+import Layout from '../../layouts/Layout.astro';
+import SectionDivider from '../../components/SectionDivider.astro';
 import { getCollection } from 'astro:content';
-import { en as t } from '../i18n';
+import { it as t } from '../../i18n';
 
-// Output streams. When real artefacts arrive, drop entries into the
-// `items` arrays — each item should have { date, title, venue?, href? }.
 const outputStreams = t.outputs.streams.map((s) => ({ ...s, items: [] as any[] }));
 
-// Updates / blog — auto-populated from src/content/updates/*.md
 const updatePosts = await getCollection('updates', ({ data }) => !data.draft);
 const updates = updatePosts
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
@@ -19,7 +16,7 @@ const updates = updatePosts
   }));
 ---
 
-<Layout title={t.siteTitle} description={t.siteDescription} lang="en" t={t}>
+<Layout title={t.siteTitle} description={t.siteDescription} lang="it" t={t}>
 
   <!-- ───────────────── HERO ───────────────── -->
   <section class="hero">
@@ -27,7 +24,7 @@ const updates = updatePosts
     <div class="container hero__inner">
       <aside class="hero__meta">
         <p class="meta-line">§&nbsp;CLICOPRE</p>
-        <p class="meta-line">Climate communication and policy responses to extreme weather events</p>
+        <p class="meta-line">Comunicazione climatica e risposta politica agli eventi meteorologici estremi</p>
         <p class="meta-line">2026 — 2029</p>
       </aside>
 
@@ -54,8 +51,8 @@ const updates = updatePosts
     </div>
   </section>
 
-<!-- ───────────────── SCOPE STRIP ───────────────── -->
-  <section class="scope-strip" aria-label="Project scope">
+  <!-- ───────────────── SCOPE STRIP ───────────────── -->
+  <section class="scope-strip" aria-label="Portata del progetto">
     <div class="container scope-strip__inner">
       <div class="scope-strip__cell reveal">
         <span class="scope-strip__label">{t.scopeStrip.dataLabel}</span>
@@ -63,8 +60,8 @@ const updates = updatePosts
       </div>
       <div class="scope-strip__cell reveal" data-delay="1">
         <span class="scope-strip__label">{t.scopeStrip.coverageLabel}</span>
-        <span class="scope-strip__value">EU (<span class="count-up" data-target="15">0</span> countries)</span>
-        <span class="scope-strip__value">US</span>
+        <span class="scope-strip__value">UE (<span class="count-up" data-target="15">0</span> paesi)</span>
+        <span class="scope-strip__value">USA</span>
       </div>
       <div class="scope-strip__cell reveal" data-delay="2">
         <span class="scope-strip__label">{t.scopeStrip.periodLabel}</span>
@@ -77,7 +74,7 @@ const updates = updatePosts
     </div>
   </section>
 
-  <!-- ───────────────── §I RESEARCH PILLARS ───────────────── -->
+  <!-- ───────────────── §I RICERCA ───────────────── -->
   <section id="research">
     <div class="container">
       <header class="section-head reveal">
@@ -104,9 +101,9 @@ const updates = updatePosts
     </div>
   </section>
 
-  <SectionDivider variant="newsfeed" />
+  <SectionDivider variant="newsfeed" lang="it" />
 
-  <!-- ───────────────── §II APPROACH ───────────────── -->
+  <!-- ───────────────── §II METODI ───────────────── -->
   <section id="approach" class="alt">
     <div class="container">
       <header class="section-head reveal">
@@ -127,16 +124,16 @@ const updates = updatePosts
     </div>
   </section>
 
-  <SectionDivider variant="network" />
+  <SectionDivider variant="network" lang="it" />
 
-  <!-- ───────────────── §III PEOPLE ───────────────── -->
+  <!-- ───────────────── §III PERSONE ───────────────── -->
   <section id="people">
     <div class="container two-col">
       <header class="section-head reveal">
         <div class="section-rail">
           <span class="section-marker">{t.people.marker}</span>
         </div>
-        <h2>{t.people.headingPre} <strong><span class="inst inst--unipd">{t.people.headingUnipd}</span></strong> {t.people.headingMid} <strong><span class="inst inst--harvard">{t.people.headingHarvard}</span></strong>.</h2>
+        <h2>{t.people.headingPre}<strong><span class="inst inst--unipd">{t.people.headingUnipd}</span></strong> {t.people.headingMid} <strong><span class="inst inst--harvard">{t.people.headingHarvard}</span></strong>.</h2>
       </header>
       <div class="reveal" data-delay="1">
         <p>
@@ -144,16 +141,16 @@ const updates = updatePosts
         </p>
         <p>
           {t.people.para2Pre} <a class="link" href="https://www.unipd.it/en/msca-seal-excellence2025" target="_blank" rel="noreferrer"><strong>MSCA Seal of Excellence@UNIPD</strong></a>{t.people.para2Mid1} <a class="link" href="https://www.economia.unipd.it/en" target="_blank" rel="noreferrer">{t.people.para2DeptName}</a>
-          {' '}{t.people.para2Mid2} <strong>{t.people.para2UnipdShort}</strong>{t.people.para2Mid3} <a class="link" href="https://gov.harvard.edu" target="_blank" rel="noreferrer">{t.people.para2HarvardDept}</a>,
+          {' '}{t.people.para2Mid2}<strong>{t.people.para2UnipdShort}</strong>{t.people.para2Mid3} <a class="link" href="https://gov.harvard.edu" target="_blank" rel="noreferrer">{t.people.para2HarvardDept}</a>,
           <strong>{t.people.para2HarvardShort}</strong>.
         </p>
       </div>
     </div>
   </section>
 
-  <SectionDivider variant="contour" />
+  <SectionDivider variant="contour" lang="it" />
 
-  <!-- ───────────────── §IV OUTPUTS ───────────────── -->
+  <!-- ───────────────── §IV RISULTATI ───────────────── -->
   <section id="outputs" class="alt">
     <div class="container">
       <header class="section-head reveal">
@@ -185,9 +182,9 @@ const updates = updatePosts
     </div>
   </section>
 
-  <SectionDivider variant="rollcall" />
+  <SectionDivider variant="rollcall" lang="it" />
 
-<!-- ───────────────── §V UPDATES ───────────────── -->
+  <!-- ───────────────── §V AGGIORNAMENTI ───────────────── -->
   <section id="updates">
     <div class="container">
       <header class="section-head reveal">
@@ -219,9 +216,9 @@ const updates = updatePosts
     </div>
   </section>
 
-  <SectionDivider variant="policy" />
+  <SectionDivider variant="policy" lang="it" />
 
-  <!-- ───────────────── §VI CONTACT ───────────────── -->
+  <!-- ───────────────── §VI CONTATTI ───────────────── -->
   <section id="contact" class="alt tight">
     <div class="container contact">
       <header class="section-head reveal">
@@ -238,7 +235,7 @@ const updates = updatePosts
 </Layout>
 
 <script>
-  // ── Count-up animation on scope strip numbers ──
+  // ── Count-up animation ──
   const counters = document.querySelectorAll<HTMLElement>('.count-up');
   if (counters.length && 'IntersectionObserver' in window) {
     const io = new IntersectionObserver((entries) => {
@@ -250,7 +247,7 @@ const updates = updatePosts
         const start = performance.now();
         const tick = (now: number) => {
           const t = Math.min((now - start) / duration, 1);
-          const ease = 1 - Math.pow(1 - t, 3); // ease-out cubic
+          const ease = 1 - Math.pow(1 - t, 3);
           el.textContent = String(Math.round(ease * target));
           if (t < 1) requestAnimationFrame(tick);
         };
@@ -303,7 +300,8 @@ const updates = updatePosts
 </script>
 
 <style>
-  /* ─────────────────────── HERO ─────────────────────── */
+  /* Styles are identical to the English page — all shared via the same
+     design tokens. Only content strings differ. */
   .hero {
     position: relative;
     padding-top: clamp(5rem, 11vw, 9.5rem);
@@ -339,7 +337,6 @@ const updates = updatePosts
     gap: clamp(1.5rem, 4vw, 4rem);
     padding-bottom: clamp(4rem, 8vw, 6.5rem);
   }
-
   .hero__meta {
     display: grid;
     align-content: start;
@@ -348,12 +345,8 @@ const updates = updatePosts
     border-top: 1px solid var(--c-line);
   }
   .hero__meta .meta-line { margin: 0; }
-
   @media (max-width: 880px) {
-    .hero__inner {
-      grid-template-columns: 1fr;
-      gap: 1.6rem;
-    }
+    .hero__inner { grid-template-columns: 1fr; gap: 1.6rem; }
     .hero__main { order: 1; }
     .hero__meta {
       order: 2;
@@ -363,10 +356,6 @@ const updates = updatePosts
       padding-top: 1.1rem;
       margin-top: 0.4rem;
     }
-  }
-
-  .hero__main {
-    position: relative;
   }
   .hero__title {
     font-size: clamp(2.6rem, 6.2vw, 5.2rem);
@@ -388,22 +377,15 @@ const updates = updatePosts
     margin: 0 0 2.2rem;
     line-height: 1.55;
   }
-  .hero__cta {
-    display: flex;
-    gap: 0.8rem;
-    flex-wrap: wrap;
-  }
+  .hero__cta { display: flex; gap: 0.8rem; flex-wrap: wrap; }
 
-  /* ─────────────────────── PILLARS ─────────────────────── */
   .pillars {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 0;
     border-top: 1px solid var(--c-line);
   }
-  @media (max-width: 880px) {
-    .pillars { grid-template-columns: 1fr; }
-  }
+  @media (max-width: 880px) { .pillars { grid-template-columns: 1fr; } }
   .pillar {
     position: relative;
     padding: 2rem 1.8rem 2.4rem 0;
@@ -412,91 +394,23 @@ const updates = updatePosts
   }
   .pillar:last-child { border-right: none; }
   @media (max-width: 880px) {
-    .pillar {
-      border-right: none;
-      border-bottom: 1px solid var(--c-line);
-      padding: 1.8rem 0 2rem;
-    }
+    .pillar { border-right: none; border-bottom: 1px solid var(--c-line); padding: 1.8rem 0 2rem; }
     .pillar:last-child { border-bottom: none; }
   }
-  .pillar__head {
-    display: flex;
-    align-items: baseline;
-    gap: 0.9rem;
-    margin-bottom: 0.7rem;
-  }
-  .pillar__n {
-    font-family: var(--f-mono);
-    font-size: 0.78rem;
-    font-weight: 500;
-    color: var(--c-teal-deep);
-    letter-spacing: 0.04em;
-  }
-  .pillar__title {
-    margin: 0;
-    font-size: var(--step-2);
-  }
-  .pillar__body {
-    margin: 0 0 1.3rem;
-    color: var(--c-ink-soft);
-    max-width: 32ch;
-  }
+  .pillar__head { display: flex; align-items: baseline; gap: 0.9rem; margin-bottom: 0.7rem; }
+  .pillar__n { font-family: var(--f-mono); font-size: 0.78rem; font-weight: 500; color: var(--c-teal-deep); letter-spacing: 0.04em; }
+  .pillar__title { margin: 0; font-size: var(--step-2); }
+  .pillar__body { margin: 0 0 1.3rem; color: var(--c-ink-soft); max-width: 32ch; }
   .pillar__keys {
-    list-style: none;
-    margin: 0;
-    padding: 1rem 0 0;
+    list-style: none; margin: 0; padding: 1rem 0 0;
     border-top: 1px dashed var(--c-line);
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem 0.9rem;
+    display: flex; flex-wrap: wrap; gap: 0.4rem 0.9rem;
   }
-  .pillar__keys li {
-    font-family: var(--f-mono);
-    font-size: 0.7rem;
-    color: var(--c-ink-muted);
-    letter-spacing: 0.02em;
-  }
-  .pillar__keys li::before {
-    content: "· ";
-    color: var(--c-teal);
-    margin-right: 0.15rem;
-  }
-  .pillar__arrow {
-    position: absolute;
-    bottom: 1.4rem;
-    right: 1.4rem;
-    font-family: var(--f-mono);
-    font-size: 0.95rem;
-    color: var(--c-ink-muted);
-    opacity: 0;
-    transform: translateX(-6px);
-    transition: opacity 0.45s var(--ease), transform 0.45s var(--ease),
-                color 0.4s ease;
-  }
-  .pillar:hover,
-  .pillar:focus-visible {
-    background: color-mix(in srgb, var(--c-teal) 5%, transparent);
-  }
-  .pillar:focus-visible {
-    outline: 2px solid var(--c-teal-deep);
-    outline-offset: -2px;
-  }
-  .pillar:hover .pillar__arrow,
-  .pillar:focus-visible .pillar__arrow,
-  .pillar:focus-within .pillar__arrow {
-    opacity: 1;
-    transform: translateX(0);
-    color: var(--c-teal-deep);
-  }
-  @media (hover: none) {
-    .pillar__arrow {
-      opacity: 1;
-      transform: none;
-      color: var(--c-teal-deep);
-    }
-  }
+  .pillar__keys li { font-family: var(--f-mono); font-size: 0.7rem; color: var(--c-ink-muted); letter-spacing: 0.02em; }
+  .pillar__keys li::before { content: "· "; color: var(--c-teal); margin-right: 0.15rem; }
+  .pillar:hover, .pillar:focus-visible { background: color-mix(in srgb, var(--c-teal) 5%, transparent); }
+  .pillar:focus-visible { outline: 2px solid var(--c-teal-deep); outline-offset: -2px; }
 
-  /* ─────────────────────── SCOPE STRIP ─────────────────────── */
   .scope-strip {
     padding-block: clamp(2.4rem, 4vw, 3.2rem);
     border-top: 1px solid var(--c-line);
@@ -508,223 +422,49 @@ const updates = updatePosts
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: clamp(1.2rem, 2.5vw, 2.4rem);
   }
-  @media (max-width: 760px) {
-    .scope-strip__inner { grid-template-columns: repeat(2, 1fr); gap: 1.6rem 1.4rem; }
-  }
-  .scope-strip__cell {
-    display: grid;
-    gap: 0.5rem;
-    padding-left: 1rem;
-    border-left: 1px solid var(--c-line-strong);
-    align-content: start;
-  }
-  .scope-strip__label {
-    font-family: var(--f-mono);
-    font-size: 0.68rem;
-    font-weight: 500;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--c-teal-deep);
-  }
-  .scope-strip__value {
-    font-family: var(--f-display);
-    font-variation-settings: "opsz" 36, "SOFT" 30, "WONK" 0;
-    font-size: var(--step-2);
-    font-weight: 400;
-    color: var(--c-ink);
-    line-height: 1.1;
-    letter-spacing: -0.012em;
-  }
+  @media (max-width: 760px) { .scope-strip__inner { grid-template-columns: repeat(2, 1fr); gap: 1.6rem 1.4rem; } }
+  .scope-strip__cell { display: grid; gap: 0.5rem; padding-left: 1rem; border-left: 1px solid var(--c-line-strong); align-content: start; }
+  .scope-strip__label { font-family: var(--f-mono); font-size: 0.68rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--c-teal-deep); }
+  .scope-strip__value { font-family: var(--f-display); font-variation-settings: "opsz" 36, "SOFT" 30, "WONK" 0; font-size: var(--step-2); font-weight: 400; color: var(--c-ink); line-height: 1.1; letter-spacing: -0.012em; }
 
-  /* ─────────────────────── APPROACH ─────────────────────── */
-  .approach__list {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: clamp(1.5rem, 3vw, 3rem);
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-  @media (max-width: 880px) {
-    .approach__list { grid-template-columns: 1fr; }
-  }
-  .approach__item {
-    border-top: 1px solid var(--c-line-strong);
-    padding-top: 1.4rem;
-  }
-  .approach__label {
-    display: block;
-    font-family: var(--f-mono);
-    font-size: 0.7rem;
-    font-weight: 500;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--c-teal-deep);
-    margin-bottom: 0.7rem;
-  }
+  .approach__list { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(1.5rem, 3vw, 3rem); list-style: none; margin: 0; padding: 0; }
+  @media (max-width: 880px) { .approach__list { grid-template-columns: 1fr; } }
+  .approach__item { border-top: 1px solid var(--c-line-strong); padding-top: 1.4rem; }
+  .approach__label { display: block; font-family: var(--f-mono); font-size: 0.7rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--c-teal-deep); margin-bottom: 0.7rem; }
   .approach__item p { margin: 0; color: var(--c-ink-soft); }
 
-  /* ─────────────────────── TWO-COLUMN ─────────────────────── */
-  .two-col {
-    display: grid;
-    grid-template-columns: 1.35fr 1fr;
-    gap: clamp(2rem, 5vw, 4.5rem);
-    align-items: start;
-  }
-  @media (max-width: 880px) {
-    .two-col { grid-template-columns: 1fr; }
-  }
+  .two-col { display: grid; grid-template-columns: 1.35fr 1fr; gap: clamp(2rem, 5vw, 4.5rem); align-items: start; }
+  @media (max-width: 880px) { .two-col { grid-template-columns: 1fr; } }
   .two-col .section-head { margin-bottom: 0; }
   .two-col p { max-width: var(--max-w-prose); }
   .two-col strong { color: var(--c-ink); font-weight: 500; }
-
   .inst--unipd   { color: #9B0014; }
   .inst--harvard { color: #A51C30; }
+  .section-head h2 { font-weight: 360; font-variation-settings: "opsz" 96, "SOFT" 22, "WONK" 0; letter-spacing: -0.016em; }
 
-  .section-head h2 {
-    font-weight: 360;
-    font-variation-settings: "opsz" 96, "SOFT" 22, "WONK" 0;
-    letter-spacing: -0.016em;
-  }
-
-  /* ─────────────────────── OUTPUT STREAMS ─────────────────────── */
-  .streams {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0;
-    border-top: 1px solid var(--c-line);
-    border-bottom: 1px solid var(--c-line);
-  }
-  @media (max-width: 880px) {
-    .streams { grid-template-columns: 1fr; }
-  }
-  .stream {
-    padding: 1.8rem 1.6rem 2rem 0;
-    border-right: 1px solid var(--c-line);
-  }
+  .streams { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--c-line); border-bottom: 1px solid var(--c-line); }
+  @media (max-width: 880px) { .streams { grid-template-columns: 1fr; } }
+  .stream { padding: 1.8rem 1.6rem 2rem 0; border-right: 1px solid var(--c-line); }
   .stream:last-child { border-right: none; }
-  @media (max-width: 880px) {
-    .stream {
-      border-right: none;
-      border-bottom: 1px solid var(--c-line);
-      padding: 1.6rem 0;
-    }
-    .stream:last-child { border-bottom: none; }
-  }
-  .stream__head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 0.8rem;
-    margin-bottom: 1rem;
-  }
-  .stream__label {
-    font-family: var(--f-mono);
-    font-size: 0.7rem;
-    font-weight: 500;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--c-teal-deep);
-  }
-  .stream__count {
-    font-family: var(--f-mono);
-    font-size: 0.7rem;
-    color: var(--c-ink-muted);
-  }
-  .stream__empty {
-    margin: 0;
-    color: var(--c-ink-muted);
-    font-size: var(--step--1);
-    line-height: 1.55;
-    max-width: 28ch;
-  }
+  @media (max-width: 880px) { .stream { border-right: none; border-bottom: 1px solid var(--c-line); padding: 1.6rem 0; } .stream:last-child { border-bottom: none; } }
+  .stream__head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.8rem; margin-bottom: 1rem; }
+  .stream__label { font-family: var(--f-mono); font-size: 0.7rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--c-teal-deep); }
+  .stream__count { font-family: var(--f-mono); font-size: 0.7rem; color: var(--c-ink-muted); }
+  .stream__empty { margin: 0; color: var(--c-ink-muted); font-size: var(--step--1); line-height: 1.55; max-width: 28ch; }
 
-  /* ─────────────────────── UPDATES LIST ─────────────────────── */
-  .updates__empty {
-    border-top: 1px solid var(--c-line);
-    padding-top: 1.6rem;
-    max-width: 56ch;
-  }
-  .updates__empty p {
-    margin-top: 0.6rem;
-    color: var(--c-ink-soft);
-  }
-  .updates__list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    border-top: 1px solid var(--c-line);
-  }
-  .update {
-    border-bottom: 1px solid var(--c-line);
-  }
-  .update__link {
-    display: grid;
-    grid-template-columns: 7rem 1fr auto;
-    gap: 0.4rem 1.6rem;
-    align-items: baseline;
-    padding: 1.6rem 0;
-    color: inherit;
-    transition: background-color 0.3s ease, padding-inline 0.4s var(--ease);
-  }
-  @media (max-width: 760px) {
-    .update__link {
-      grid-template-columns: 1fr auto;
-      gap: 0.3rem 1rem;
-    }
-    .update__date { grid-column: 1 / -1; }
-  }
-  .update__date {
-    margin: 0;
-    color: var(--c-ink-muted);
-  }
-  .update__title {
-    margin: 0;
-    font-size: var(--step-2);
-    line-height: 1.15;
-  }
-  .update__excerpt {
-    grid-column: 2 / 3;
-    margin: 0.5rem 0 0;
-    color: var(--c-ink-soft);
-    max-width: 58ch;
-  }
-  @media (max-width: 760px) {
-    .update__excerpt { grid-column: 1 / -1; }
-  }
-  .update__arrow {
-    align-self: center;
-    font-family: var(--f-mono);
-    color: var(--c-ink-muted);
-    transform: translateX(-4px);
-    opacity: 0;
-    transition: opacity 0.4s var(--ease), transform 0.4s var(--ease),
-                color 0.3s ease;
-  }
+  .updates__empty { border-top: 1px solid var(--c-line); padding-top: 1.6rem; max-width: 56ch; }
+  .updates__empty p { margin-top: 0.6rem; color: var(--c-ink-soft); }
+  .updates__list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--c-line); }
+  .update { border-bottom: 1px solid var(--c-line); }
+  .update__link { display: grid; grid-template-columns: 7rem 1fr auto; gap: 0.4rem 1.6rem; align-items: baseline; padding: 1.6rem 0; color: inherit; transition: background-color 0.3s ease; }
+  @media (max-width: 760px) { .update__link { grid-template-columns: 1fr auto; gap: 0.3rem 1rem; } .update__date { grid-column: 1 / -1; } }
+  .update__date { margin: 0; color: var(--c-ink-muted); }
+  .update__title { margin: 0; font-size: var(--step-2); line-height: 1.15; }
+  .update__excerpt { grid-column: 2 / 3; margin: 0.5rem 0 0; color: var(--c-ink-soft); max-width: 58ch; }
+  @media (max-width: 760px) { .update__excerpt { grid-column: 1 / -1; } }
+  .update__arrow { align-self: center; font-family: var(--f-mono); color: var(--c-ink-muted); transform: translateX(-4px); opacity: 0; transition: opacity 0.4s var(--ease), transform 0.4s var(--ease), color 0.3s ease; }
   .update__link:hover { background: color-mix(in srgb, var(--c-teal) 4%, transparent); }
-  .update__link:hover .update__arrow {
-    opacity: 1;
-    transform: translateX(0);
-    color: var(--c-teal-deep);
-  }
+  .update__link:hover .update__arrow { opacity: 1; transform: translateX(0); color: var(--c-teal-deep); }
 
-  /* ─────────────────────── MISC ─────────────────────── */
-  .muted { color: var(--c-ink-muted); max-width: 64ch; }
   .contact .section-head { margin-bottom: 1.2rem; }
-  .contact-addresses {
-    display: flex;
-    gap: clamp(2rem, 6vw, 5rem);
-    flex-wrap: wrap;
-    margin-top: 1.4rem;
-  }
-  .contact-address {
-    font-size: var(--step--1);
-    line-height: 1.65;
-    color: var(--c-ink-soft);
-  }
-  .contact-address strong {
-    color: var(--c-ink);
-    display: block;
-    margin-bottom: 0.15em;
-  }
 </style>

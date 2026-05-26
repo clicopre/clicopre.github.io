@@ -9,24 +9,23 @@
 //   network   → social media · Facebook ego-graph + hearts/hashtags
 //   rollcall  → parliament · seats + 1 traveler at a time, soundwaves at desk
 
+import {
+  dispatchFragmentsEN, dispatchFragmentsIT,
+  nfItemsEN, nfItemsIT,
+  nfSourceThemeEN, nfSourceThemeIT,
+} from '../i18n/dividers';
+import type { NewsItem } from '../i18n/dividers';
+
 interface Props {
   variant: 'heatwave' | 'dispatch' | 'contour' | 'voice' | 'network' | 'rollcall' | 'newsfeed' | 'policy';
   caption?: string;
+  lang?: 'en' | 'it';
 }
 
-const { variant, caption } = Astro.props;
+const { variant, caption, lang = 'en' } = Astro.props;
 
 // ── Dispatch (wire-service teletype) ────────────────────────────
-const dispatchFragments = [
-  '— REUTERS', '· DG ·', 'COPENHAGEN', '— DISPATCH', '·· — ·', 'BRUSSELS',
-  '— ANALYSIS', '· · WIRE', 'BERLIN', '— UPDATE', '·· POLL', 'MADRID',
-  '— BREAKING', '· OPINION', 'WARSAW', '— BULLETIN', '·· EDIT', 'PRAGA',
-  '— REUTERS-AP', '· COMMENT', 'LISBOA', '— EMBARGO', '·· DRAFT', 'ROMA',
-  '— FILED', '· · DRAFT', 'PARIS', '— RECAST', '·· LEDE', 'WASHINGTON',
-  '— REWRITE', '· STET', 'BUDAPEST', '— SLUG', '·· KILL', 'ATHENS',
-  '— UNCONFIRMED', '· BACKGROUND', 'STOCKHOLM', '— OFF-RECORD', '·· FEED',
-  'OSLO', '— EMBARGOED', '· — ·', 'DUBLIN', '— SOURCED', '·· LEAK',
-];
+const dispatchFragments = lang === 'it' ? dispatchFragmentsIT : dispatchFragmentsEN;
 const dispatchTape = (() => {
   const out: string[] = [];
   for (let i = 0; i < dispatchFragments.length * 3; i++) {
@@ -589,8 +588,6 @@ const rcDeskNeutral = '#c8c4b6';
 // source agency, date, place, and headline. Mixed categories: elections,
 // financial, extreme weather, sports, cultural events.
 
-type NewsItem = { source: string; date: string; place: string; headline: string; theme: string };
-
 // Theme colours — each source belongs to a category; the dot on the globe
 // and the source label in the ticker share the same colour.
 const nfThemeColors: Record<string, string> = {
@@ -602,7 +599,15 @@ const nfThemeColors: Record<string, string> = {
   sports:   '#c9722b', // amber — sports
   culture:  '#8b3a4f', // wine — cultural / awards
 };
-const nfThemeLabels: Record<string, string> = {
+const nfThemeLabels: Record<string, string> = lang === 'it' ? {
+  news:     'NOTIZIE',
+  finance:  'FINANZA',
+  weather:  'METEO',
+  media:    'MEDIA',
+  health:   'SALUTE',
+  sports:   'SPORT',
+  culture:  'CULTURA',
+} : {
   news:     'NEWS',
   finance:  'FINANCE',
   weather:  'WEATHER',
@@ -611,18 +616,12 @@ const nfThemeLabels: Record<string, string> = {
   sports:   'SPORTS',
   culture:  'CULTURE',
 };
-const nfSourceTheme: Record<string, string> = {
-  'REUTERS': 'news', 'AP': 'news', 'AFP': 'news',
-  'BLOOMBERG': 'finance', 'FEDERAL RESERVE': 'finance', 'ECB': 'finance',
-  'BANK OF ENGLAND': 'finance', 'IMF': 'finance', 'WORLD BANK': 'finance', 'OECD': 'finance',
-  'NOAA': 'weather', 'ECMWF': 'weather', 'WMO': 'weather', 'MET OFFICE': 'weather',
-  'DWD': 'weather', 'IPCC': 'weather',
-  'BBC': 'media',
-  'WHO': 'health', 'UN': 'health',
-};
+const nfSourceTheme: Record<string, string> = lang === 'it' ? nfSourceThemeIT : nfSourceThemeEN;
 const nfSourceColor = (src: string) => nfThemeColors[nfSourceTheme[src] || 'news'] || nfThemeColors.news;
 
-const nfItems: NewsItem[] = [
+const nfItems: NewsItem[] = lang === 'it' ? nfItemsIT : nfItemsEN;
+// ── EN items kept here for reference; live data comes from dividers.ts ──
+const _nfItemsEN_ref: NewsItem[] = [
   // ── 2010 ────────────────────────────────────────────────────────
   { source: 'ECB',             date: '2010-04-23', place: 'Athens, GR',             headline: 'Greece requests EU-IMF bailout as sovereign debt crisis erupts', theme: 'finance' },
   { source: 'REUTERS',         date: '2010-05-06', place: 'London, UK',             headline: 'Hung parliament: no party wins outright majority in UK general election', theme: 'news' },
