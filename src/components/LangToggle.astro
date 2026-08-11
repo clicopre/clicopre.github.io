@@ -3,20 +3,22 @@ import type { Lang } from '../i18n';
 
 interface Props {
   lang: Lang;
+  enHref?: string;
+  itHref?: string;
 }
-const { lang } = Astro.props;
+const { lang, enHref = '/', itHref = '/it/' } = Astro.props;
 ---
 
 <nav class="lang-toggle" aria-label="Language / Lingua">
   <a
-    href="/"
+    href={enHref}
     class="lang-toggle__opt"
     hreflang="en"
     aria-current={lang === 'en' ? 'page' : undefined}
     data-lang="en"
   >EN</a>
   <a
-    href="/it/"
+    href={itHref}
     class="lang-toggle__opt"
     hreflang="it"
     aria-current={lang === 'it' ? 'page' : undefined}

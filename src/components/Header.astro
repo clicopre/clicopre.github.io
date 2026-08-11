@@ -7,17 +7,28 @@ import type { Lang, Translations } from '../i18n';
 interface Props {
   lang?: Lang;
   t?: Translations;
+  navBasePath?: string;
+  enHref?: string;
+  itHref?: string;
 }
-const { lang = 'en', t: tProp } = Astro.props;
+const {
+  lang = 'en',
+  t: tProp,
+  navBasePath = '',
+  enHref = '/',
+  itHref = '/it/',
+} = Astro.props;
 const t = tProp ?? (lang === 'it' ? it : en);
 const nav = t.nav;
+const homeHref = lang === 'it' ? '/it/' : '/';
+const navHref = (href: string) => `${navBasePath}${href}`;
 ---
 
 <header class="site-header" data-nav-open="false">
   <SignatureStrip class="site-header__stripes" />
 
   <div class="container site-header__inner">
-    <a class="brand" href="/" aria-label="CLICOPRE — home">
+    <a class="brand" href={homeHref} aria-label="CLICOPRE — home">
       <span class="brand__word">CLICOPRE</span>
     </a>
 
@@ -28,7 +39,7 @@ const nav = t.nav;
       <ul>
         {nav.map((item) => (
           <li>
-            <a href={item.href}>
+            <a href={navHref(item.href)}>
               <span class="site-nav__num">{item.n}</span>
               <span class="site-nav__label">{item.label}</span>
             </a>
@@ -37,7 +48,7 @@ const nav = t.nav;
       </ul>
     </nav>
 
-    <LangToggle lang={lang} />
+    <LangToggle lang={lang} enHref={enHref} itHref={itHref} />
 
     <button
       class="nav-toggle"
@@ -60,7 +71,7 @@ const nav = t.nav;
   <ul>
     {nav.map((item) => (
       <li>
-        <a href={item.href}>
+        <a href={navHref(item.href)}>
           <span class="site-nav__num">{item.n}</span>
           <span class="site-nav__label">{item.label}</span>
         </a>

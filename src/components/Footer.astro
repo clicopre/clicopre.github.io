@@ -6,9 +6,14 @@ import type { Lang, Translations } from '../i18n';
 interface Props {
   lang?: Lang;
   t?: Translations;
+  navBasePath?: string;
 }
-const { lang = 'en', t: tProp } = Astro.props;
+const { lang = 'en', t: tProp, navBasePath = '' } = Astro.props;
 const t = tProp ?? (lang === 'it' ? it : en);
+const homeHref = lang === 'it' ? '/it/' : '/';
+const privacyHref = lang === 'it' ? '/it/privacy/' : '/privacy/';
+const privacyLabel = lang === 'it' ? 'Informativa sulla privacy' : 'Privacy notice';
+const navHref = (href: string) => `${navBasePath}${href}`;
 
 // Institutional data — roles are localised via t.footer.institutionRoles,
 // names/logos are language-neutral (proper nouns / SVG marks).
@@ -32,7 +37,7 @@ const year = new Date().getFullYear();
   <div class="container">
     <div class="site-footer__grid">
       <div class="site-footer__brand">
-        <a class="brand" href="/" aria-label="CLICOPRE — home">
+        <a class="brand" href={homeHref} aria-label="CLICOPRE — home">
           <span class="brand__word">CLICOPRE</span>
         </a>
         <p class="site-footer__tag">{t.footer.tag}</p>
@@ -41,11 +46,11 @@ const year = new Date().getFullYear();
       <div>
         <h4>{t.footer.projectHeading}</h4>
         <ul class="site-footer__list">
-          <li><a href="#research">{t.footer.navLinks.research}</a></li>
-          <li><a href="#approach">{t.footer.navLinks.approach}</a></li>
-          <li><a href="#outputs">{t.footer.navLinks.outputs}</a></li>
-          <li><a href="#updates">{t.footer.navLinks.updates}</a></li>
-          <li><a href="#contact">{t.footer.navLinks.contact}</a></li>
+          <li><a href={navHref('#research')}>{t.footer.navLinks.research}</a></li>
+          <li><a href={navHref('#approach')}>{t.footer.navLinks.approach}</a></li>
+          <li><a href={navHref('#outputs')}>{t.footer.navLinks.outputs}</a></li>
+          <li><a href={navHref('#updates')}>{t.footer.navLinks.updates}</a></li>
+          <li><a href={navHref('#contact')}>{t.footer.navLinks.contact}</a></li>
         </ul>
       </div>
 
@@ -108,7 +113,10 @@ const year = new Date().getFullYear();
 
     <div class="site-footer__meta">
       <p class="meta-line">© {year} CLICOPRE · Duccio Gamannossi degl’Innocenti</p>
-      <a class="back-to-top" href="#">{t.footer.backToTop}</a>
+      <div class="site-footer__meta-links">
+        <a href={privacyHref}>{privacyLabel}</a>
+        <a class="back-to-top" href="#">{t.footer.backToTop}</a>
+      </div>
     </div>
   </div>
 </footer>
@@ -333,13 +341,23 @@ const year = new Date().getFullYear();
     max-width: 56ch;
     color: inherit;
   }
-  .back-to-top {
+  .site-footer__meta-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem 1.5rem;
+    align-items: center;
     font-family: var(--f-mono);
     font-size: 0.72rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
+  }
+  .site-footer__meta-links a {
     color: color-mix(in srgb, var(--c-bg) 60%, transparent);
     transition: color 0.3s ease;
+  }
+  .site-footer__meta-links a:hover { color: var(--c-teal-soft); }
+  .back-to-top {
+    color: color-mix(in srgb, var(--c-bg) 60%, transparent);
   }
   .back-to-top:hover { color: var(--c-teal-soft); }
 </style>

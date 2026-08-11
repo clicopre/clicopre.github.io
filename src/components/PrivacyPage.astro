@@ -1,0 +1,294 @@
+---
+import Layout from '../layouts/Layout.astro';
+import type { Lang, Translations } from '../i18n';
+import type { PrivacyNotice } from '../privacy';
+
+interface Props {
+  lang: Lang;
+  t: Translations;
+  notice: PrivacyNotice;
+}
+
+const { lang, t, notice } = Astro.props;
+const isItalian = lang === 'it';
+const canonicalPath = isItalian ? '/it/privacy/' : '/privacy/';
+const homePath = isItalian ? '/it/' : '/';
+---
+
+<Layout
+  title={`${notice.title} | CLICOPRE`}
+  description={notice.description}
+  lang={lang}
+  t={t}
+  canonicalPath={canonicalPath}
+  alternateEnPath="/privacy/"
+  alternateItPath="/it/privacy/"
+  navBasePath={homePath}
+>
+  <header class="privacy-hero">
+    <div class="container privacy-hero__inner">
+      <p class="eyebrow">{notice.annexLabel}</p>
+      <h1>{notice.title}</h1>
+      <p class="privacy-hero__intro">{notice.intro}</p>
+    </div>
+  </header>
+
+  <div class="container privacy-layout">
+    <nav class="privacy-toc" aria-label={notice.contentsLabel}>
+      <p class="privacy-toc__label">{notice.contentsLabel}</p>
+      <ol>
+        {notice.sections.map((section) => (
+          <li><a href={`#${section.id}`}>{section.title}</a></li>
+        ))}
+      </ol>
+    </nav>
+
+    <article class="privacy-copy">
+      {notice.sections.map((section) => (
+        <section id={section.id} aria-labelledby={`${section.id}-heading`}>
+          <h2 id={`${section.id}-heading`}>{section.title}</h2>
+          {section.blocks.map((block) => {
+            if (block.type === 'subheading') {
+              return <h3>{block.text}</h3>;
+            }
+            if (block.type === 'list') {
+              return (
+                <ul>
+                  {block.items.map((item) => <li><Fragment set:html={item} /></li>)}
+                </ul>
+              );
+            }
+            return <p><Fragment set:html={block.html} /></p>;
+          })}
+        </section>
+      ))}
+    </article>
+  </div>
+</Layout>
+
+<style>
+  .privacy-hero {
+    position: relative;
+    overflow: hidden;
+    padding-block: clamp(4.5rem, 9vw, 8rem) clamp(3.5rem, 7vw, 6rem);
+    border-bottom: 1px solid var(--c-line);
+    background:
+      radial-gradient(circle at 84% 18%, color-mix(in srgb, var(--c-teal) 13%, transparent), transparent 32%),
+      var(--c-bg-alt);
+  }
+
+  .privacy-hero__inner {
+    max-width: 980px;
+  }
+
+  .privacy-hero .eyebrow {
+    margin-bottom: clamp(1rem, 2vw, 1.5rem);
+  }
+
+  .privacy-hero h1 {
+    max-width: 18ch;
+    margin: 0;
+    color: var(--c-ink);
+    font-family: var(--f-display);
+    font-size: clamp(2.65rem, 5.7vw, 5.5rem);
+    font-variation-settings: "opsz" 96, "SOFT" 38, "WONK" 0;
+    font-weight: 420;
+    letter-spacing: -0.045em;
+    line-height: 0.98;
+  }
+
+  .privacy-hero__intro {
+    max-width: 72ch;
+    margin: clamp(1.5rem, 3vw, 2.25rem) 0 0;
+    color: var(--c-ink-soft);
+    font-size: var(--step-1);
+    line-height: 1.62;
+  }
+
+  .privacy-layout {
+    display: grid;
+    grid-template-columns: minmax(12rem, 18rem) minmax(0, 48rem);
+    gap: clamp(3rem, 7vw, 7.5rem);
+    align-items: start;
+    justify-content: center;
+    padding-block: clamp(3.5rem, 7vw, 7rem);
+  }
+
+  .privacy-toc {
+    position: sticky;
+    top: 7rem;
+    padding-top: 0.2rem;
+  }
+
+  .privacy-toc__label {
+    margin: 0 0 1rem;
+    color: var(--c-teal-deep);
+    font-family: var(--f-mono);
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .privacy-toc ol {
+    display: grid;
+    gap: 0.52rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .privacy-toc a {
+    display: block;
+    color: var(--c-ink-muted);
+    font-size: var(--step--2);
+    line-height: 1.36;
+    text-decoration: none;
+    transition: color 0.2s ease, transform 0.2s ease;
+  }
+
+  .privacy-toc a:hover,
+  .privacy-toc a:focus-visible {
+    color: var(--c-teal-deep);
+    transform: translateX(0.18rem);
+  }
+
+  .privacy-copy {
+    min-width: 0;
+  }
+
+  .privacy-copy section {
+    padding-block: 0 2.7rem;
+    scroll-margin-top: 7rem;
+  }
+
+  .privacy-copy section + section {
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--c-line);
+  }
+
+  .privacy-copy h2 {
+    margin: 0 0 1.15rem;
+    padding-top: 2.3rem;
+    color: var(--c-ink);
+    font-family: var(--f-display);
+    font-size: clamp(1.75rem, 2.7vw, 2.45rem);
+    font-variation-settings: "opsz" 48, "SOFT" 35, "WONK" 0;
+    font-weight: 480;
+    letter-spacing: -0.025em;
+    line-height: 1.12;
+  }
+
+  .privacy-copy section:first-child h2 {
+    padding-top: 0;
+  }
+
+  .privacy-copy h3 {
+    margin: 2rem 0 0.75rem;
+    color: var(--c-ink);
+    font-family: var(--f-sans);
+    font-size: var(--step-1);
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .privacy-copy p,
+  .privacy-copy li {
+    color: var(--c-ink-soft);
+    font-size: var(--step-0);
+    line-height: 1.72;
+  }
+
+  .privacy-copy p {
+    margin: 0 0 1rem;
+  }
+
+  .privacy-copy ul {
+    display: grid;
+    gap: 0.9rem;
+    margin: 1.15rem 0 1.4rem;
+    padding-left: 1.35rem;
+  }
+
+  .privacy-copy :global(strong) {
+    color: var(--c-ink);
+    font-weight: 600;
+  }
+
+  .privacy-copy :global(a) {
+    color: var(--c-teal-deep);
+    text-decoration-line: underline;
+    text-decoration-thickness: 0.08em;
+    text-underline-offset: 0.18em;
+  }
+
+  .privacy-copy :global(a:hover) {
+    color: var(--c-amber);
+  }
+
+  @media (max-width: 860px) {
+    .privacy-layout {
+      grid-template-columns: 1fr;
+      gap: 3rem;
+    }
+
+    .privacy-toc {
+      position: static;
+      padding: 1.25rem;
+      border: 1px solid var(--c-line);
+      background: var(--c-bg-alt);
+    }
+
+    .privacy-toc ol {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.65rem 1.5rem;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .privacy-hero {
+      padding-block: 3.5rem 3rem;
+    }
+
+    .privacy-hero h1 {
+      font-size: clamp(2.35rem, 12vw, 3.6rem);
+    }
+
+    .privacy-layout {
+      padding-block: 2.5rem 4rem;
+    }
+
+    .privacy-toc ol {
+      grid-template-columns: 1fr;
+    }
+
+    .privacy-copy section {
+      padding-bottom: 2.2rem;
+    }
+  }
+
+  @media print {
+    .privacy-hero {
+      padding-block: 2rem;
+      background: transparent;
+    }
+
+    .privacy-hero h1 {
+      max-width: none;
+      font-size: 2.5rem;
+    }
+
+    .privacy-layout {
+      display: block;
+      padding-block: 2rem;
+    }
+
+    .privacy-toc {
+      display: none;
+    }
+
+    .privacy-copy section {
+      break-inside: avoid-page;
+    }
+  }
+</style>
