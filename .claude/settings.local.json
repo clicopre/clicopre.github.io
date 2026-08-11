@@ -1,7 +1,45 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(domain:www.energy-a.eu)"
+      "Bash(gh auth:*)",
+      "Bash(npm --version)",
+      "WebFetch(domain:www.youtube.com)",
+      "WebSearch",
+      "WebFetch(domain:youtubetranscript.com)",
+      "WebFetch(domain:youtubetotranscript.com)",
+      "WebFetch(domain:tactiq.io)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(node scripts/screenshot.mjs --pass=1)",
+      "Bash(rm -f temporary_screenshots/*.png)",
+      "Bash(node scripts/screenshot.mjs --pass=2)",
+      "Bash(gh repo:*)",
+      "Bash(gh api:*)",
+      "Bash(gh run:*)",
+      "Bash(curl -sI https://clicopre.github.io/)",
+      "Bash(git add *)",
+      "Bash(git commit --no-gpg-sign -m ' *)",
+      "Bash(git commit -m ' *)",
+      "Bash(tty)",
+      "WebFetch(domain:www.unipd.it)",
+      "WebFetch(domain:identity.harvard.edu)",
+      "WebFetch(domain:www.harvard.edu)",
+      "WebFetch(domain:hwpi.harvard.edu)",
+      "WebFetch(domain:www.seas.harvard.edu)",
+      "WebFetch(domain:identity.seas.harvard.edu)",
+      "Bash(git commit *)",
+      "Bash(export GPG_TTY=$\\(tty\\))",
+      "Bash(brew list *)",
+      "Bash(brew install *)",
+      "Bash(gpgconf --kill gpg-agent)",
+      "Bash(git push *)",
+      "Skill(frontend-design)",
+      "Skill(browser-use)",
+      "Bash(npx astro *)",
+      "Bash(npx tsc *)",
+      "Bash(git -C \"/Users/dgdi/Library/CloudStorage/GoogleDrive-duccio.gamannossi@unipd.it/My Drive/MSCA/clicopre_site\" config --list)",
+      "Bash(git -c commit.gpgsign=false commit -m 'Add Italian localisation with language toggle and UX refinements *)",
+      "Bash(git -c commit.gpgsign=false commit -m 'IT localisation: chart labels, contour legend codes, hero title *)"
     ]
   }
 }

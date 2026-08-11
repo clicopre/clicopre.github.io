@@ -25,3 +25,6 @@ pnpm-debug.log*
 # screenshot loop scratch space
 temporary_screenshots/
 .playwright-mcp/
+
+# Claude Code local settings (personal, per-machine)
+.claude/settings.local.json
