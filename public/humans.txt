@@ -9,7 +9,6 @@ Location: Padua, Italy / Cambridge, MA
 Standards: HTML5, CSS3, SVG
 Software: Astro
 Fonts: Fraunces, IBM Plex Sans, IBM Plex Mono (Google Fonts)
-Analytics: GoatCounter (privacy-friendly, no cookies)
 
 /* PROJECT */
 
