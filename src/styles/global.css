@@ -30,7 +30,7 @@
   --ws-7: #b8401f;
 
   /* typography */
-  --f-display: "Fraunces", "Source Serif 4", Georgia, "Times New Roman", serif;
+  --f-display: "Fraunces Variable", "Source Serif 4", Georgia, "Times New Roman", serif;
   --f-sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --f-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas,
@@ -92,8 +92,8 @@
   --c-teal-soft:  #e8d4c5;
   --c-amber:      #6f8a7e;   /* aged celadon as secondary */
 
-  --f-display: "Newsreader", "Newsreader Fallback", Georgia, "Times New Roman", serif;
-  --f-sans:    "Literata", Georgia, "Times New Roman", serif;
+  --f-display: "Newsreader Variable", "Newsreader Fallback", Georgia, "Times New Roman", serif;
+  --f-sans:    "Literata Variable", Georgia, "Times New Roman", serif;
   --f-mono:    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
   /* Dispatch keeps a paler grain — wire-service offset print feel */
@@ -119,7 +119,7 @@
   --c-amber:      #6a647a;   /* smoke-violet secondary */
 
   --f-display: "Instrument Serif", Georgia, "Times New Roman", serif;
-  --f-sans:    "Manrope", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --f-sans:    "Manrope Variable", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --f-mono:    "Space Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 
@@ -143,7 +143,7 @@
   --c-amber:      #8a9a73;   /* lichen secondary */
 
   --f-display: "Spectral", Georgia, "Times New Roman", serif;
-  --f-sans:    "DM Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --f-sans:    "DM Sans Variable", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --f-mono:    "DM Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 

@@ -23,7 +23,7 @@ export default defineConfig({
         "frame-src 'none'",
         "connect-src 'self'",
         "img-src 'self' data:",
-        "font-src 'self' https://fonts.gstatic.com",
+        "font-src 'self'",
         "media-src 'self'",
         "worker-src 'self'",
         'upgrade-insecure-requests',
@@ -37,7 +37,6 @@ export default defineConfig({
       styleDirective: {
         resources: [
           { resource: "'self'", kind: 'element' },
-          { resource: 'https://fonts.googleapis.com', kind: 'element' },
           { resource: "'unsafe-inline'", kind: 'attribute' },
         ],
       },

@@ -1,4 +1,5 @@
 ---
+import '../styles/fonts.js';
 import '../styles/global.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
@@ -92,25 +93,7 @@ Astro.csp.insertScriptHash(
     <meta name="theme-color" content="#f4f1e8" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#141110" media="(prefers-color-scheme: dark)" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Preload the display font to cut LCP -->
-    <link
-      rel="preload"
-      as="font"
-      type="font/woff2"
-      href="https://fonts.gstatic.com/s/fraunces/v38/6NUV8FyLNQOQZAnv9ZwHlOkuy91BRtw.woff2"
-      crossorigin
-    />
-    <!-- Default theme: Fraunces + IBM Plex Sans + IBM Plex Mono.
-         Alternative themes load Newsreader/Literata/JetBrains Mono (Dispatch),
-         Instrument Serif/Manrope/Space Mono (Frequency),
-         Spectral/DM Sans/DM Mono (Cartograph).
-         All families share one stylesheet so theme switching is instant. -->
-    <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..700,30..100,0..1&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,300..600&family=Literata:opsz,wght@7..72,300..600&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Manrope:wght@300;400;500;600&family=Space+Mono:wght@400;700&family=Spectral:wght@300;400;500;600&family=DM+Sans:opsz,wght@9..40,300..600&family=DM+Mono:wght@400;500&display=swap"
-      rel="stylesheet"
-    />
+    <!-- Fonts are self-hosted at build time (src/styles/fonts.js); no third-party font request is made. -->
     <title>{title}</title>
 
     <!-- LLM-friendly site summary -->
