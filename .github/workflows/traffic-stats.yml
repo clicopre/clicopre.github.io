@@ -1,0 +1,64 @@
+name: Collect traffic stats
+
+# Snapshots GitHub's 14-day traffic API into cumulative CSVs under traffic/.
+# Weekly is safe because the API keeps a rolling 14-day window.
+
+on:
+  schedule:
+    - cron: '17 4 * * 1'   # every Monday, 04:17 UTC
+  workflow_dispatch:        # allow manual runs from the Actions tab
+
+permissions:
+  contents: write
+
+concurrency:
+  group: traffic-stats
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch traffic data
+        env:
+          # Uses a PAT (secret TRAFFIC_TOKEN) if present, otherwise the built-in token.
+          # The traffic API needs push access; if the built-in token returns 403,
+          # add a secret TRAFFIC_TOKEN (see setup notes at the bottom of this file).
+          GH_TOKEN: ${{ secrets.TRAFFIC_TOKEN || secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          mkdir -p traffic
+          gh api "repos/$REPO/traffic/views"             > traffic/_views.json
+          gh api "repos/$REPO/traffic/clones"            > traffic/_clones.json
+          gh api "repos/$REPO/traffic/popular/paths"     > traffic/_paths.json
+          gh api "repos/$REPO/traffic/popular/referrers" > traffic/_referrers.json
+
+      - name: Merge into cumulative CSVs
+        run: python3 scripts/collect_traffic.py
+
+      - name: Commit updated CSVs
+        run: |
+          rm -f traffic/_*.json
+          if [ -z "$(git status --porcelain traffic)" ]; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add traffic/*.csv
+          git commit -m "chore(traffic): update stats $(date -u +%F) [skip ci]"
+          git push
+
+# ── One-time setup ────────────────────────────────────────────────────────────
+# The repository "Traffic" API requires push access. The built-in GITHUB_TOKEN
+# sometimes returns 403 for these endpoints. If the scheduled run fails on the
+# "Fetch traffic data" step, create a token and add it as a secret:
+#   1. GitHub → Settings → Developer settings → Personal access tokens →
+#      Fine-grained token, scoped to clicopre/clicopre.github.io, with
+#      "Administration: Read-only" (or a classic token with the `repo` scope).
+#   2. Repo → Settings → Secrets and variables → Actions → New repository secret
+#      named TRAFFIC_TOKEN with that token as the value.
+# ──────────────────────────────────────────────────────────────────────────────
