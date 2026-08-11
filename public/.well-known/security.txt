@@ -1,0 +1,4 @@
+Contact: mailto:info@clicopre.com
+Expires: 2027-08-11T23:59:59Z
+Preferred-Languages: en, it
+Canonical: https://clicopre.com/.well-known/security.txt

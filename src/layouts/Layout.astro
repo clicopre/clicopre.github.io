@@ -4,6 +4,7 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import ThemeSwitcher from '../components/ThemeSwitcher.astro';
 import type { Lang, Translations } from '../i18n';
+import { createHash } from 'node:crypto';
 
 interface Props {
   title?: string;
@@ -69,6 +70,13 @@ const jsonLd = {
     },
   ],
 };
+
+// Escape '<' so future dynamic descriptions cannot terminate the JSON-LD
+// script element. Astro's CSP integration hashes this block during the build.
+const jsonLdText = JSON.stringify(jsonLd).replace(/</g, '\\u003c');
+Astro.csp.insertScriptHash(
+  `sha256-${createHash('sha256').update(jsonLdText).digest('base64')}`,
+);
 ---
 
 <!doctype html>
@@ -76,6 +84,7 @@ const jsonLd = {
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
     <meta name="description" content={description} />
     <meta name="robots" content="index, follow" />
     <meta name="author" content="Duccio Gamannossi degl'Innocenti" />
@@ -149,7 +158,8 @@ const jsonLd = {
     <meta name="citation_language" content="en" />
 
     <!-- Schema.org JSON-LD -->
-    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    <script type="application/ld+json" set:html={jsonLdText} />
+    <script is:inline src="/theme-init.js"></script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
@@ -161,8 +171,9 @@ const jsonLd = {
     <ThemeSwitcher />
 
     <!-- Language-preference redirect — only fires on first visit after explicit toggle -->
-    <script define:vars={{ currentLang: lang }}>
+    <script>
       (function () {
+        const currentLang = document.documentElement.lang;
         const stored = localStorage.getItem('clicopre-lang');
         if (!stored || stored === currentLang) return;
         const onIt = location.pathname.startsWith('/it');
@@ -186,8 +197,8 @@ const jsonLd = {
     </script>
 
     <!-- GoatCounter — privacy-friendly analytics, no cookies, no consent banner -->
-    <script data-goatcounter="https://clicopre.goatcounter.com/count"
-            async src="//gc.zgo.at/count.js"></script>
+    <script is:inline data-goatcounter="https://clicopre.goatcounter.com/count"
+            async src="/vendor/goatcounter-count.js"></script>
 
     <script>
       // Scroll-reveal via IntersectionObserver — no library.

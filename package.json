@@ -6,17 +6,18 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "astro build",
+    "check:public": "node scripts/check-public-files.mjs",
+    "build": "npm run check:public && astro build",
     "preview": "astro preview",
     "astro": "astro",
     "shoot": "node scripts/screenshot.mjs"
   },
   "dependencies": {
-    "@astrojs/rss": "^4.0.18",
-    "@astrojs/sitemap": "3.2.1",
-    "astro": "^4.16.0"
+    "@astrojs/rss": "4.0.19",
+    "@astrojs/sitemap": "3.7.3",
+    "astro": "7.2.0"
   },
   "devDependencies": {
-    "puppeteer": "^24.40.0"
+    "puppeteer": "25.5.0"
   }
 }

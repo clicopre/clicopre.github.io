@@ -9,6 +9,40 @@ export default defineConfig({
   site: 'https://clicopre.github.io',
   trailingSlash: 'ignore',
   integrations: [sitemap()],
+  markdown: {
+    // Shiki emits inline styles that conflict with the strict CSP.
+    syntaxHighlight: false,
+  },
+  security: {
+    csp: {
+      directives: [
+        "default-src 'self'",
+        "base-uri 'self'",
+        "object-src 'none'",
+        "form-action 'self'",
+        "frame-src 'none'",
+        "connect-src 'self' https://clicopre.goatcounter.com",
+        "img-src 'self' data: https://clicopre.goatcounter.com",
+        "font-src 'self' https://fonts.gstatic.com",
+        "media-src 'self'",
+        "worker-src 'self'",
+        'upgrade-insecure-requests',
+      ],
+      scriptDirective: {
+        resources: [
+          { resource: "'self'", kind: 'element' },
+          { resource: "'none'", kind: 'attribute' },
+        ],
+      },
+      styleDirective: {
+        resources: [
+          { resource: "'self'", kind: 'element' },
+          { resource: 'https://fonts.googleapis.com', kind: 'element' },
+          { resource: "'unsafe-inline'", kind: 'attribute' },
+        ],
+      },
+    },
+  },
   build: {
     assets: 'assets',
   },

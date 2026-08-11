@@ -28,16 +28,6 @@
   </svg>
 </button>
 
-<script is:inline>
-  // Apply mode as early as possible to avoid a flash.
-  (function () {
-    try {
-      var m = localStorage.getItem('clicopre-mode');
-      if (m) document.documentElement.setAttribute('data-mode', m);
-    } catch (e) {}
-  })();
-</script>
-
 <script>
   const root = document.documentElement;
   const btn = document.querySelector<HTMLButtonElement>('.mode-btn');
