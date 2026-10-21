@@ -40,7 +40,7 @@ const dispatchTapeLong = dispatchTape + '  ·  ' + dispatchTape;
 // countries 8-15 reuse the same 8 colours with dashed lines.
 const contourPalette = [
   '#2c5d8a', '#b8401f', '#0a8a7a', '#c9722b',
-  '#6b3fa0', '#4a8c3a', '#c44535', '#0e1d28',
+  '#6b3fa0', '#4a8c3a', '#c44535', 'var(--c-ink)', // ink follows the theme
 ];
 const contourCountries = [
   { code: 'BE',  codeIt: 'BE',  label: 'Belgium',        color: contourPalette[0], thin: false },
@@ -81,7 +81,8 @@ const contourPatternCountries: number[][] = Array.from(
 const cW = 1200;
 const cH = 60;
 const segs = 220;
-const contourCap = 100; // peaks can reach the top line
+const contourCap = 100; // the top line (100%)
+const contourKnee = 80;  // above this, peaks are eased toward the top line, never sliced flat
 
 // One path per (pattern, country-in-pattern). The shape is seeded by
 // the country's index (so each country has its own characteristic
@@ -148,7 +149,11 @@ const contourPatterns: ContourLine[][] = contourPatternCountries.map((countryInd
         const d = x - pk.pos;
         v += pk.amp * Math.exp(-(d * d) / (2 * pk.sig * pk.sig));
       }
-      v = Math.max(0, Math.min(contourCap, v));
+      if (v > contourKnee) {
+        const room = contourCap - 2 - contourKnee;
+        v = contourKnee + room * Math.tanh((v - contourKnee) / room);
+      }
+      v = Math.max(0, v);
       const y = cH - v * (cH / 100);
       coords.push({ x, y });
       pts.push(`${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`);
@@ -350,13 +355,12 @@ const netRand = (i: number, salt: number) => {
   return s - Math.floor(s);
 };
 
-type NetNode = { x: number; y: number; r: number; isHub: boolean };
+type NetNode = { x: number; y: number; r: number };
 const netNodes: NetNode[] = Array.from({ length: netNodeCount }, (_, i) => {
   const x = 12 + netRand(i, 1) * (netW - 24);
   const y = 5 + netRand(i, 2) * (netH - 10);
-  const isHub = (i * 11 + 3) % 11 === 0;
-  const r = isHub ? 3.2 : 1.6 + netRand(i, 3) * 1.0;
-  return { x, y, r, isHub };
+  const r = 1.6 + netRand(i, 3) * 1.0;
+  return { x, y, r };
 });
 
 // Per-node target degree in [1, 8], deterministic.
@@ -384,8 +388,8 @@ for (let i = 0; i < netNodes.length; i++) {
 }
 
 // Identify connected components via union-find, then bridge the two
-// largest components with two new "hub" vertices placed midway between
-// their centroids.
+// largest components with two new vertices placed midway between their
+// centroids. They are styled like every other node.
 const netParent = Array.from({ length: netNodes.length }, (_, i) => i);
 const netFind = (x: number): number => {
   let r = x;
@@ -425,9 +429,9 @@ if (netComponents.length >= 2) {
   const mx = (cA.x + cB.x) / 2;
   const my = (cA.y + cB.y) / 2;
   const bridge1Idx = netNodes.length;
-  netNodes.push({ x: mx - 18, y: my - 4, r: 2.4, isHub: true });
+  netNodes.push({ x: mx - 18, y: my - 4, r: 2.1 });
   const bridge2Idx = netNodes.length;
-  netNodes.push({ x: mx + 18, y: my + 4, r: 2.4, isHub: true });
+  netNodes.push({ x: mx + 18, y: my + 4, r: 2.1 });
 
   const nearestIn = (idxs: number[], from: { x: number; y: number }) => {
     let best = idxs[0];
@@ -464,7 +468,7 @@ const netGlyphs = Array.from({ length: 30 }, (_, i) => {
 // Each dot has a topic → colour (same palette as nfThemeColors).
 // Colours inlined here because nfThemeColors is defined later in the file.
 const netTopicColors: Record<string, string> = {
-  news:     '#0e1d28',
+  news:     'var(--c-ink)', // follows the theme, like nfThemeColors.news
   finance:  '#2c5d8a',
   weather:  '#b8401f',
   media:    '#6b3fa0',
@@ -580,9 +584,6 @@ const rcDeskY = rcH - 7;  // moved 3 units toward audience (was rcH - 4)
 const rcSpeakerSeats = [10, 160, 58, 126, 30, 81, 18, 172];
 const rcSpeakerSet = new Set(rcSpeakerSeats);
 
-// Neutral desk colour — slightly darker than --c-bg-alt
-const rcDeskNeutral = '#c8c4b6';
-
 // ── Newsfeed (spinning globe + ticker) ──────────────────────────────
 // Deterministic news items spanning 2010-01–2024-07. Each item has a
 // source agency, date, place, and headline. Mixed categories: elections,
@@ -591,7 +592,7 @@ const rcDeskNeutral = '#c8c4b6';
 // Theme colours — each source belongs to a category; the dot on the globe
 // and the source label in the ticker share the same colour.
 const nfThemeColors: Record<string, string> = {
-  news:     '#0e1d28', // dark ink — wire agencies (Reuters, AP, AFP)
+  news:     'var(--c-ink)', // ink — wire agencies (Reuters, AP, AFP); follows the theme
   finance:  '#2c5d8a', // blue — financial (Bloomberg, Fed, ECB, BoE, IMF, World Bank, OECD)
   weather:  '#b8401f', // red — meteorological / climate (NOAA, ECMWF, WMO, Met Office, DWD, IPCC)
   media:    '#6b3fa0', // purple — broadcast (BBC)
@@ -910,10 +911,9 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
                     {lines.map((line) => (
                       <path
                         d={line.d}
-                        stroke={contourCountries[line.countryIdx].color}
                         class={`sd-contour__path${line.thin ? ' sd-contour__path--thin' : ''}`}
                         data-len={line.len}
-                        style={`stroke-dasharray:${line.len};stroke-dashoffset:${line.len}`}
+                        style={`stroke:${contourCountries[line.countryIdx].color};stroke-dasharray:${line.len};stroke-dashoffset:${line.len}`}
                       />
                     ))}
                   </g>
@@ -927,7 +927,7 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
                 <li>
                   <svg class="sd-contour__swatch" viewBox="0 0 22 4" xmlns="http://www.w3.org/2000/svg">
                     <line x1="0" y1="2" x2="22" y2="2"
-                      stroke={c.color}
+                      style={`stroke:${c.color}`}
                       stroke-width={c.thin ? '1.2' : '3'}
                       stroke-dasharray="none" />
                   </svg>
@@ -1118,7 +1118,7 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
               ))}
               {netNodes.map((n, i) => (
                 <circle cx={n.x} cy={n.y} r={n.r}
-                  class={`sd-network__node ${n.isHub ? 'sd-network__node--hub' : ''}`}
+                  class="sd-network__node"
                   style={`animation-delay: ${(i % 13) * 0.23}s`} />
               ))}
             </svg>
@@ -1246,7 +1246,6 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
         <div
           class="sd-rollcall__plot"
           data-speakers={JSON.stringify(rcSpeakerSeats)}
-          data-desk-neutral={rcDeskNeutral}
         >
           <div class="sd-rollcall__wave-overlay" aria-hidden="true"></div>
           <svg viewBox={`0 0 ${rcW} ${rcH}`} preserveAspectRatio="none">
@@ -1265,13 +1264,12 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
               );
             })}
 
-            {/* Desk — fill animated by JS */}
+            {/* Desk — neutral fill from CSS, speaker colour set by JS */}
             <rect
               x={rcDeskX - rcDeskHalfW}
               y={rcDeskY - rcDeskHalfH}
               width={rcDeskHalfW * 2}
               height={rcDeskHalfH * 2}
-              fill={rcDeskNeutral}
               class="sd-rollcall__desk"
             />
 
@@ -1316,14 +1314,18 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
     const count    = dots.length;
 
     // ── Timing ──
-    const waveCrossDur = 15.0;   // seconds for wave to cross full container (= dotInterval)
+    // One cycle per event, shared by every divider (broadcast below): the
+    // ring sets off at t = 0 and reaches 1.5× the container width at the
+    // end of the cycle; everything has faded by settleAt.
+    const dotInterval  = 15.0;            // the shared cycle
+    const waveCrossDur = dotInterval;     // ring growth to maxRadius
+    const settleAt     = dotInterval - 0.5;
     const dotPulseSec  = 3.5;
-    const revealSec    = 4.0;
-    const holdSec      = 9.5;    // → dotInterval = 15s
     const fadeSec      = 1.0;
-    const gapSec       = 0.5;
-    const newsDur      = revealSec + holdSec + fadeSec; // 14.5s
-    const dotInterval  = newsDur + gapSec;              // 15s
+    // The headline is revealed behind the wave front, never ahead of it:
+    // its reveal edge trails the front by trailPx, feathered over softPx.
+    const trailPx      = 28;
+    const softPx       = 44;
 
     // ── Ticker items ──
     const tickerEl = nfContainer.querySelector<HTMLElement>('.sd-newsfeed__ticker');
@@ -1362,10 +1364,16 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
       front: boolean;
       color: string;
       ring: HTMLDivElement | null;
-      newsTriggered: boolean;
     }
     const queue: Evt[] = [];
     let nextIdx  = 0;
+
+    function hideItem(el: HTMLElement) {
+      el.style.opacity = '0';
+      el.style.clipPath = 'inset(0 100% 0 0)';
+      el.style.maskImage = 'none';
+      el.style.webkitMaskImage = 'none';
+    }
     let nextFire = performance.now() / 1000;
 
     const reducedMotion =
@@ -1416,13 +1424,15 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
               idx: chosen, fire: t,
               screenX, screenY,
               front: true, color: evtColor, ring,
-              newsTriggered: false,
             });
             nextIdx  = (chosen + 1) % count;
             nextFire = t + dotInterval;
 
-            // Broadcast to network so it fires at the same instant
-            window.dispatchEvent(new CustomEvent('clicopre-wave', { detail: { color: evtColor } }));
+            // Broadcast to the other dividers so they fire at the same instant,
+            // with the cycle length and the ring speed they must keep to
+            window.dispatchEvent(new CustomEvent('clicopre-wave', { detail: {
+              color: evtColor, cycle: dotInterval, speed: (cW * 1.5) / waveCrossDur,
+            } }));
           }
         }
 
@@ -1446,9 +1456,9 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
           const dt = t - ev.fire;
 
           // Finished — clean up
-          if (dt > waveCrossDur + newsDur + 2) {
+          if (dt > waveCrossDur) {
             const el = items[ev.idx];
-            if (el) { el.style.opacity = '0'; el.style.clipPath = 'inset(0 100% 0 0)'; }
+            if (el) hideItem(el);
             if (ev.ring?.parentNode) ev.ring.remove();
             queue.splice(q, 1);
             continue;
@@ -1465,7 +1475,7 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
             const depth = cosLon > 0 ? 0.7 + 0.3 * cosLon : 0.15;
             const el  = dotEls[ev.idx];
             if (el) {
-              el.setAttribute('fill', ev.color);
+              el.style.fill = ev.color;
               el.setAttribute('opacity', (env * depth).toFixed(2));
               el.setAttribute('r', (3.0 + env * 0.8).toFixed(1));
             }
@@ -1487,32 +1497,25 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
           // Wave front radius at current time
           const waveFront = dt > 0 ? Math.min(1, dt / waveCrossDur) * maxRadius : 0;
 
-          // 3. News reveal — triggered when wave front passes the content area left edge
-          const distToContent = Math.max(0, contentLeft - ev.screenX);
-          if (!ev.newsTriggered && waveFront >= distToContent && dt > 0) {
-            ev.newsTriggered = true;
-            // Source label colour is already set at build time from the topic
-          }
+          // 3. News reveal — the headline appears behind the wave front as it
+          //    sweeps across, holds, and fades out at the end of the cycle.
           const el = items[ev.idx];
-          if (el && ev.newsTriggered) {
-            const newsT = dt - (distToContent / maxRadius) * waveCrossDur;
-            if (newsT >= 0 && newsT < newsDur) {
-              if (newsT < revealSec) {
-                const frac = newsT / revealSec;
-                el.style.clipPath = `inset(0 ${((1 - frac) * 100).toFixed(1)}% 0 0)`;
-                el.style.opacity  = '1';
-              } else if (newsT < revealSec + holdSec) {
-                el.style.clipPath = 'inset(0 0 0 0)';
-                el.style.opacity  = '1';
-              } else {
-                const f = (newsT - revealSec - holdSec) / fadeSec;
-                el.style.clipPath = 'inset(0 0 0 0)';
-                el.style.opacity  = Math.max(0, 1 - f).toFixed(2);
-              }
-            } else if (newsT >= newsDur) {
-              el.style.opacity  = '0';
-              el.style.clipPath = 'inset(0 100% 0 0)';
+          if (el && dt < settleAt) {
+            const frontX = ev.screenX + waveFront;   // along the ring's centre line
+            const itemLeft = contentLeft + el.offsetLeft;
+            const edge = frontX - trailPx - itemLeft; // reveal edge, item px
+            if (edge > 0) {
+              el.style.clipPath = 'none';
+              const mask = edge - softPx >= el.offsetWidth
+                ? 'none'
+                : `linear-gradient(90deg, #000 ${(edge - softPx).toFixed(1)}px, transparent ${edge.toFixed(1)}px)`;
+              el.style.maskImage = mask;
+              el.style.webkitMaskImage = mask;
+              const fadeT = dt - (settleAt - fadeSec);
+              el.style.opacity = fadeT > 0 ? Math.max(0, 1 - fadeT / fadeSec).toFixed(2) : '1';
             }
+          } else if (el) {
+            hideItem(el);
           }
 
         }
@@ -1536,38 +1539,31 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
     const patterns = Array.from(contourEl.querySelectorAll<SVGGElement>('.sd-contour__pattern'));
     const maxLen = parseInt(getComputedStyle(contourEl).getPropertyValue('--contour-len') || '1300', 10);
 
-    // Compute drawDur so the contour drawing tip arrives at the right
-    // edge at the same instant the soundwave ring front does.
-    //
-    // 1. Wave speed (px/s) = maxRadius / 14, where maxRadius = nfWidth × 1.5
-    // 2. Time for wave to cross the *contour plot* width = plotWidth / waveSpeed
-    // 3. stroke-dashoffset animates along *path length*, not horizontal
-    //    distance. Peaks add extra length, so the tip's average horizontal
-    //    speed is slower by the ratio maxLen / svgViewBoxWidth (1200).
-    //    Multiply drawDur by that ratio so the rightmost point of the
-    //    path is reached when the wave front passes it.
-    let drawDur = 14.0 / 1.5;  // fallback
-    let waveSpeedPx = 0;  // px/s — shared with ring expansion
+    // The drawing tip follows the soundwave ring across the plot: it starts
+    // just behind the front (drawLag) and reaches the right edge with it.
+    // stroke-dashoffset runs along *path length*, which peaks make longer
+    // than the 1200-unit horizontal span, so the draw time is scaled by that
+    // ratio. Lines then hold and fade out with the other dividers at the
+    // end of the cycle.
     const contourPlot = contourEl.querySelector<HTMLElement>('.sd-contour__plot');
-    const nfBox = document.querySelector<HTMLElement>('.sd-newsfeed');
-    if (contourPlot && nfBox) {
-      const plotWidth = contourPlot.getBoundingClientRect().width;
-      const nfW = nfBox.getBoundingClientRect().width;
-      const maxRadius = nfW * 1.5;
-      waveSpeedPx = maxRadius / 15.0;                        // px / s
-      const horizontalTime = plotWidth / waveSpeedPx;         // time for wave to cross plot
-      const pathLengthRatio = maxLen / 1200;                  // path is longer than horizontal span
-      drawDur = horizontalTime * pathLengthRatio;
-    }
-
-    const fadeDur = 0.6;
+    const pathLengthRatio = maxLen / 1200;
+    const drawLag  = 0.3;
+    const fadeDur  = 1.0;
+    const settleEarly = 0.5;
     let nextPattern = 0;
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // Active draws — each entry is cleaned up after fade
-    type ContourDraw = { patternIdx: number; t0: number; fading: boolean };
+    // Active draws, timed from the wave event (t0) — cleaned up after fade
+    type ContourDraw = { patternIdx: number; t0: number; drawDur: number; fadeAt: number };
     const active: ContourDraw[] = [];
+
+    function resetPaths(pi: number) {
+      patterns[pi].querySelectorAll<SVGPathElement>('.sd-contour__path').forEach(p => {
+        p.style.opacity = '1';
+        p.style.strokeDashoffset = p.dataset.len || '1200';
+      });
+    }
 
     if (!reducedMotion) {
       // Wave overlay for expanding ring
@@ -1575,16 +1571,21 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
 
       window.addEventListener('clicopre-wave', ((e: CustomEvent) => {
         const color = e.detail?.color || 'var(--c-accent)';
+        const cycle = e.detail?.cycle > 0 ? e.detail.cycle : 15;
+        const plotW = contourPlot?.getBoundingClientRect().width || 1000;
+        const speed = e.detail?.speed > 0 ? e.detail.speed : (plotW * 1.5) / cycle;
+        const t0 = performance.now() / 1000;
+
+        // A previous pattern still on screen (throttled page) clears now
+        active.splice(0).forEach(d => resetPaths(d.patternIdx));
+
         const pi = nextPattern % patterns.length;
-        const paths = patterns[pi].querySelectorAll<SVGPathElement>('.sd-contour__path');
-        // Reset each path using its own length
-        paths.forEach(p => {
-          const len = parseInt(p.dataset.len || '1200', 10);
-          p.style.transition = '';
-          p.style.opacity = '1';
-          p.style.strokeDashoffset = `${len}`;
+        resetPaths(pi);
+        active.push({
+          patternIdx: pi, t0,
+          drawDur: (plotW / speed) * pathLengthRatio,
+          fadeAt: cycle - settleEarly - fadeDur,
         });
-        active.push({ patternIdx: pi, t0: performance.now() / 1000 + 0.3, fading: false });
         nextPattern++;
 
         // Create expanding ring from left edge
@@ -1596,13 +1597,11 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
           ring.style.top = '50%';
           waveOverlay.appendChild(ring);
 
-          const plotW = contourPlot.getBoundingClientRect().width;
           const maxR = plotW * 1.5;
-          const ringT0 = performance.now() / 1000;
-          const ringDur = waveSpeedPx > 0 ? maxR / waveSpeedPx : drawDur;
+          const ringDur = maxR / speed;
 
           (function ringTick() {
-            const dt = performance.now() / 1000 - ringT0;
+            const dt = performance.now() / 1000 - t0;
             if (dt < ringDur) {
               const frac = dt / ringDur;
               const r = frac * maxR;
@@ -1623,34 +1622,17 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
           const d = active[i];
           const dt = t - d.t0;
           const paths = patterns[d.patternIdx].querySelectorAll<SVGPathElement>('.sd-contour__path');
-
-          if (dt < drawDur) {
-            // Drawing phase — each path uses its own length so tips stay aligned
-            const frac = dt / drawDur;
-            paths.forEach(p => {
-              const len = parseInt(p.dataset.len || '1200', 10);
-              p.style.strokeDashoffset = (len * (1 - frac)).toFixed(1);
-              // Start fading at 88% drawn, snap over last 12%
-              if (frac > 0.88) {
-                const fadeFrac = (frac - 0.88) / 0.12;
-                p.style.opacity = (1 - fadeFrac).toFixed(2);
-              }
-            });
-          } else if (!d.fading) {
-            // Draw complete — quick final fade
-            d.fading = true;
-            paths.forEach(p => {
-              p.style.strokeDashoffset = '0';
-              p.style.transition = `opacity 0.3s ease-out`;
-              p.style.opacity = '0';
-            });
-          } else if (dt > drawDur + 0.4) {
-            // Fade done — clean up
-            paths.forEach(p => {
-              const len = parseInt(p.dataset.len || '1200', 10);
-              p.style.transition = '';
-              p.style.strokeDashoffset = `${len}`;
-            });
+          // Each path uses its own length so the tips stay aligned
+          const frac = Math.min(1, Math.max(0, (dt - drawLag) / d.drawDur));
+          const fade = Math.min(1, Math.max(0, (dt - d.fadeAt) / fadeDur));
+          paths.forEach(p => {
+            const len = parseInt(p.dataset.len || '1200', 10);
+            p.style.strokeDashoffset = (len * (1 - frac)).toFixed(1);
+            p.style.opacity = (1 - fade).toFixed(2);
+          });
+          if (fade >= 1) {
+            resetPaths(d.patternIdx);
+            paths.forEach(p => { p.style.opacity = '0'; });
             active.splice(i, 1);
           }
         }
@@ -1688,7 +1670,6 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
 
     const count = dots.length;
     const pulseSec = 3.5;
-    const waveCrossDur = 15.0;        // seconds for wave to cross network (matches newsfeed)
 
     // ── Mobile: rescale network SVG viewBox so circles stay circular ──
     const isMobile = window.matchMedia('(max-width: 600px)').matches;
@@ -1761,15 +1742,19 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
       dotIdx: number;
       ring: HTMLDivElement | null;
       triggered: boolean[];
+      speed: number;   // ring growth, px/s — from the newsfeed broadcast
+      cycle: number;   // seconds until the next event
     };
     const activeWaves: ActiveWave[] = [];
 
     // Network follows the newsfeed's timing via a shared event bus.
     // Pending fires queued here are consumed on the next rAF tick.
     let nextIdx = 0;
-    const pendingFires: string[] = [];  // topic colors from newsfeed
+    const pendingFires: { color: string; speed: number; cycle: number }[] = [];
     window.addEventListener('clicopre-wave', ((e: CustomEvent) => {
-      pendingFires.push(e.detail.color);
+      const cycle = e.detail?.cycle > 0 ? e.detail.cycle : 15;
+      const speed = e.detail?.speed > 0 ? e.detail.speed : (netFull.getBoundingClientRect().width * 1.5) / cycle;
+      pendingFires.push({ color: e.detail.color, speed, cycle });
     }) as EventListener);
 
     (function tick() {
@@ -1778,7 +1763,8 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
 
       // ── Fire dot when newsfeed broadcasts an event ──
       while (pendingFires.length > 0) {
-        const evtColor = pendingFires.shift()!;
+        const fire = pendingFires.shift()!;
+        const evtColor = fire.color;
 
         // Pick a front-hemisphere dot (round-robin)
         let chosen = -1;
@@ -1825,6 +1811,8 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
               dotIdx: chosen,
               ring,
               triggered: new Array(glyphData.length).fill(false),
+              speed: fire.speed,
+              cycle: fire.cycle,
             });
           }
         }
@@ -1845,7 +1833,7 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
 
           const fireT = (d as any)._fireTime;
           const fireColor = (d as any)._fireColor || d.color;
-          dotEl.setAttribute('fill', fireColor);
+          dotEl.style.fill = fireColor;
           const dt = fireT ? t - fireT : Infinity;
           if (dt < pulseSec) {
             const tN = dt / pulseSec;
@@ -1870,26 +1858,24 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
           const w = activeWaves[wi];
           const elapsed = t - w.startTime;
 
-          if (elapsed > waveCrossDur + 2) {
+          if (elapsed > w.cycle) {
             if (w.ring?.parentNode) w.ring.remove();
             activeWaves.splice(wi, 1);
             continue;
           }
 
-          // JS-driven ring expansion (matches newsfeed approach)
+          // JS-driven ring expansion at the shared speed (matches newsfeed)
           const maxRadius = fullRect.width * 1.5;
-          if (w.ring && elapsed > 0 && elapsed < waveCrossDur) {
-            const wt = elapsed / waveCrossDur;
-            const r  = wt * maxRadius;
-            w.ring.style.width  = `${r * 2}px`;
-            w.ring.style.height = `${r * 2}px`;
+          const waveFrontPx = Math.min(maxRadius, Math.max(0, elapsed) * w.speed);
+          if (w.ring && waveFrontPx < maxRadius) {
+            const wt = waveFrontPx / maxRadius;
+            w.ring.style.width  = `${waveFrontPx * 2}px`;
+            w.ring.style.height = `${waveFrontPx * 2}px`;
             w.ring.style.opacity = Math.max(0, 0.75 * (1 - wt * 0.6)).toFixed(2);
-          } else if (w.ring && elapsed >= waveCrossDur) {
+          } else if (w.ring) {
             if (w.ring.parentNode) w.ring.remove();
             w.ring = null;
           }
-
-          const waveFrontPx = Math.min(1, elapsed / waveCrossDur) * maxRadius;
 
           // Check each glyph.
           for (let gi = 0; gi < glyphData.length; gi++) {
@@ -1971,7 +1957,6 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
 
       const rcOverlay = rcPlot.querySelector<HTMLElement>('.sd-rollcall__wave-overlay');
       const speakerIndices: number[] = JSON.parse(rcPlot.dataset.speakers || '[]');
-      const deskNeutral = rcPlot.dataset.deskNeutral || '#c8c4b6';
 
       const seatEls = Array.from(rcSvg.querySelectorAll<SVGCircleElement>('.sd-rollcall__seat'));
       const mpEls   = Array.from(rcSvg.querySelectorAll<SVGCircleElement>('.sd-rollcall__mp'));
@@ -1997,6 +1982,20 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
 
       // Active SVG wave elements
       const activeWaveEls: SVGElement[] = [];
+
+      function lerp(a: number, b: number, t: number) {
+        return a + (b - a) * Math.max(0, Math.min(1, t));
+      }
+      function ease(t: number) {
+        t = Math.max(0, Math.min(1, t));
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      }
+      // Topic colours may be theme tokens ("var(--c-ink)"); blending needs hex.
+      function resolveColor(c: string): string {
+        const m = /^var\((--[\w-]+)\)$/.exec(c.trim());
+        if (!m) return c;
+        return getComputedStyle(rcPlot!).getPropertyValue(m[1]).trim() || '#6b7985';
+      }
 
       // Hemicycle wave geometry — elliptical arcs matching the seat layout.
       // Seats sit on ellipses centred at (600, vbH) with rx=360..590, ry=22..53.
@@ -2024,7 +2023,7 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
         return `M ${x0.toFixed(1)} ${y0.toFixed(1)} A ${rx.toFixed(1)} ${ry.toFixed(1)} 0 0 0 ${x1.toFixed(1)} ${y1.toFixed(1)}`;
       }
 
-      function spawnCssWave(color: string, delay: number, reachScale: number = 1) {
+      function spawnCssWave(color: string, delay: number, reachScale: number = 1, dur: number = WAVE_DUR) {
         setTimeout(() => {
           const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
           g.setAttribute('class', 'sd-rollcall__wave-arc');
@@ -2057,8 +2056,8 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
           const wT0 = performance.now() / 1000;
           (function wTick() {
             const wd = performance.now() / 1000 - wT0;
-            if (wd < WAVE_DUR) {
-              const f = wd / WAVE_DUR;
+            if (wd < dur) {
+              const f = wd / dur;
               const rx = f * scaledMaxRx;
               const ry = f * scaledMaxRy;
 
@@ -2225,22 +2224,28 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
         }
       }
 
+      // All dividers share one cycle, carried by each clicopre-wave event:
+      // the ring sets off at t = 0 and moves at `speed` px/s, and every
+      // divider has settled again by the end of the cycle.
+      let cycleSec = 15.0;
       const nfBoxEl = document.querySelector<HTMLElement>('.sd-newsfeed');
-      if (nfBoxEl) {
-        const nfW = nfBoxEl.getBoundingClientRect().width;
-        waveSpeedPx = (nfW * 1.5) / 15.0;
-      }
+      if (nfBoxEl) waveSpeedPx = (nfBoxEl.getBoundingClientRect().width * 1.5) / cycleSec;
 
-      // Timing (synced to other dividers' waveCrossDur=14s, dotInterval=15s)
-      // Cycle must be < 15s to avoid drift; 12.7s leaves 2.3s buffer
-      const WAVE_CROSS_DUR = 15.0; // matches waveCrossDur = dotInterval
-      const FOCUS_DUR     = 2.5;  // concentric rings zoom onto touched MP
-      const WALK_OUT_DUR  = 2.95; // dot moves to desk
-      const SPEAK_DUR     = 5.25; // single wave with lingering (−1.5s)
-      const WALK_BACK_DUR = 1.0;
-      const WAVE_DUR      = 4.5;  // one long lingering wave
-      const WAVE_OFFSETS   = [0.0]; // single replication
-      const COLOR_SHIFT_T  = 4.0;  // near end of the lingering wave
+      // Speech timing. The speaker is highlighted as the wave sets off and is
+      // back in their seat SETTLE_EARLY before the cycle ends. Focus, walk
+      // out and walk back run at full length when there is time (down to
+      // MOVES_MIN_PACE of it in a shorter cycle); speaking takes the rest,
+      // emitting a soundwave every WAVE_REPEAT seconds.
+      const SETTLE_EARLY   = 0.5;
+      const FOCUS_DUR      = 2.5;  // concentric rings zoom onto touched MP
+      const WALK_OUT_DUR   = 2.95; // dot moves to desk
+      const WALK_BACK_DUR  = 1.0;
+      const MOVES_DUR      = FOCUS_DUR + WALK_OUT_DUR + WALK_BACK_DUR;
+      const MOVES_MIN_PACE = 0.66;
+      const SPEAK_MIN      = 3.0;
+      const WAVE_DUR       = 4.5;  // one long lingering soundwave
+      const WAVE_REPEAT    = 2.6;
+      const TINT_FADE      = 1.6;  // = .sd-rollcall__seat fill transition
       const FOCUS_RINGS    = 2;
       const FOCUS_RING_DUR = 0.5;
 
@@ -2308,20 +2313,24 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
       }
 
       // ──────── State machine ────────
+      // One speaker per newsfeed event, highlighted as its wave sets off and
+      // seated again before the next event.
       let speakerRound = 0;
-      const evtQueue: { color: string }[] = [];
-      type RcState = 'IDLE' | 'RIPPLE' | 'FOCUS' | 'WALK_OUT' | 'SPEAKING' | 'WALK_BACK';
+      const tintedSeats: SVGCircleElement[] = [];
+      type RcState = 'IDLE' | 'FOCUS' | 'WALK_OUT' | 'SPEAKING' | 'WALK_BACK';
       let state: RcState = 'IDLE';
       let stateT0 = 0;
+      let cycleT0 = -Infinity;  // when the current event's ring set off
       let activeIdx = -1;
-      let activeColor = '';  // raw news color
+      let activeColor = '';  // raw news color (may be a theme token)
+      let activeHex = '';    // activeColor resolved to hex, for blending
       let blendedColor = ''; // party + news blend
       let activeParty = '';
       let seatX = 0, seatY = 0;
-      let rippleDur = 1.0;
+      let focusDur = FOCUS_DUR, walkOutDur = WALK_OUT_DUR, speakDur = SPEAK_MIN, walkBackDur = WALK_BACK_DUR;
+      let shiftT = 2.0;      // seconds into the speech when the audience tints
       let shifted = false;
-      let spawnedWaves: boolean[] = [false];
-      let waveOffsets: number[] = [0.0];
+      let waveSchedule: { off: number; dur: number; spawned: boolean }[] = [];
       let waveReachScale = 1.0;   // 0–1 scale for wave reach
       let colorShiftProb = 0.5;   // probability of audience color shift
       let focusRingsSpawned = 0;
@@ -2334,32 +2343,59 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
 
       if (!rcReducedMotion) {
         window.addEventListener('clicopre-wave', ((e: CustomEvent) => {
-          evtQueue.push({ color: e.detail?.color || 'var(--c-accent)' });
+          const color = e.detail?.color || 'var(--c-accent)';
+          if (e.detail?.speed > 0) waveSpeedPx = e.detail.speed;
+          if (e.detail?.cycle > 0) cycleSec = e.detail.cycle;
+          spawnArrivalRing(color);
+          // A speech still running (only if the page was throttled) ends now
+          if (state !== 'IDLE') seatSpeaker();
+          clearTints();
+          startSpeaker(color, performance.now() / 1000);
         }) as EventListener);
 
-        function lerp(a: number, b: number, t: number) {
-          return a + (b - a) * Math.max(0, Math.min(1, t));
-        }
-        function ease(t: number) {
-          t = Math.max(0, Math.min(1, t));
-          return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        function clearTints() {
+          tintedSeats.forEach(el => { el.style.fill = ''; });
+          tintedSeats.length = 0;
         }
 
-        function startNext(): boolean {
-          if (!evtQueue.length) return false;
-          const { color } = evtQueue.shift()!;
+        // Put the active speaker back in their seat and free the desk
+        function seatSpeaker() {
+          const mp = mpByIdx.get(activeIdx);
+          if (mp) {
+            mp.setAttribute('cx', seatX.toFixed(1));
+            mp.setAttribute('cy', seatY.toFixed(1));
+            mp.setAttribute('fill', blendedColor);
+            mp.setAttribute('r', mp.dataset.baseR || '3.875');
+          }
+          activeWaveEls.forEach(el => el.remove());
+          activeWaveEls.length = 0;
+          if (deskEl) deskEl.style.fill = '';
+          state = 'IDLE';
+        }
+
+        function startSpeaker(color: string, t0: number) {
           const idx = speakerIndices[speakerRound % speakerIndices.length];
           speakerRound++;
+          const mp = mpByIdx.get(idx);
+
+          // Fit the speech into the cycle
+          const budget = cycleSec - SETTLE_EARLY;
+          const movesPace = Math.min(1, Math.max(MOVES_MIN_PACE, (budget - SPEAK_MIN) / MOVES_DUR));
+          focusDur    = FOCUS_DUR * movesPace;
+          walkOutDur  = WALK_OUT_DUR * movesPace;
+          walkBackDur = WALK_BACK_DUR * movesPace;
+          speakDur    = Math.max(1, budget - MOVES_DUR * movesPace);
+          shiftT      = Math.min(2.0, speakDur * 0.4);
 
           activeIdx   = idx;
           activeColor = color;
-          const mp = mpByIdx.get(idx);
-          activeParty = mp?.getAttribute('fill') || '#6b7985';
+          activeHex   = resolveColor(color);
+          // Speakers keep their blended colour after speaking; blend from the
+          // original party colour so it does not drift over repeated turns.
+          if (mp && !mp.dataset.party) mp.dataset.party = mp.getAttribute('fill') || '#6b7985';
+          activeParty = mp?.dataset.party || '#6b7985';
           seatX = parseFloat(mp?.getAttribute('cx') || '600');
           seatY = parseFloat(mp?.getAttribute('cy') || '30');
-
-          // Ripple time: fixed at 10% of waveCrossDur (when wave is ~10% across other dividers)
-          rippleDur = 1.0; // early concentric trigger
           shifted = false;
           focusRingsSpawned = 0;
           emojiBurstSpawned = false;
@@ -2371,20 +2407,27 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
           // inflateMax range: ~1.15 (tiny) to ~2.3 (huge)
           // Normalise to 0–1 for scaling
           const sizeNorm = Math.min(1, Math.max(0, (inflateMax - 1.15) / (2.3 - 1.15)));
-          // Wave count: 1 (small) to 3 (big)
+          // Opening burst of 1 (small) to 3 (big) soundwaves, then one every
+          // WAVE_REPEAT s; each must fade out before the speaker is seated.
           const nWaves = 1 + Math.floor(sizeNorm * 2.99);
-          waveOffsets = Array.from({ length: nWaves }, (_, i) => i * 0.7);
-          spawnedWaves = waveOffsets.map(() => false);
+          const offsets = Array.from({ length: nWaves }, (_, i) => i * 0.7);
+          for (let off = WAVE_REPEAT; off < speakDur - 1.0; off += WAVE_REPEAT) offsets.push(off);
+          waveSchedule = offsets.map(off => ({
+            off, dur: Math.min(WAVE_DUR, speakDur + walkBackDur - off), spawned: false,
+          }));
           // Wave reach: 60% (small) to 104% (big) — median ~80%, hitting 3rd row
           waveReachScale = 0.60 + sizeNorm * 0.44;
           // Color shift probability: 15% (small) to 70% (big)
           colorShiftProb = 0.15 + sizeNorm * 0.55;
           // Blend: 55% party + 45% news
-          blendedColor = blendColors(activeParty, color, 0.45);
-          state   = 'RIPPLE';
-          stateT0 = performance.now() / 1000;
+          blendedColor = blendColors(activeParty, activeHex, 0.45);
+          state   = 'FOCUS';
+          stateT0 = t0;
+          cycleT0 = t0;
+        }
 
-          // Expanding ring from left-center (visible in narrow strip)
+        // Expanding ring from left-center (visible in narrow strip)
+        function spawnArrivalRing(color: string) {
           if (rcOverlay) {
             const ring = document.createElement('div');
             ring.className = 'sd-rollcall__ring';
@@ -2412,27 +2455,24 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
               }
             })();
           }
-          return true;
         }
 
         (function tick() {
           const now = performance.now() / 1000;
           const dt  = now - stateT0;
 
+          // The audience tint fades with the rest of the dividers at cycle end
+          if (tintedSeats.length && now - cycleT0 >= cycleSec - SETTLE_EARLY - TINT_FADE) clearTints();
+
           if (state === 'IDLE') {
-            if (evtQueue.length) startNext();
-          } else if (state === 'RIPPLE') {
-            // No size change during ripple — just wait for ring to reach seat
-            const mp = mpByIdx.get(activeIdx);
-            if (mp && !mp.dataset.baseR) mp.dataset.baseR = mp.getAttribute('r') || '3.875';
-            if (dt >= rippleDur) { state = 'FOCUS'; stateT0 = now; }
+            // waiting for the next clicopre-wave event
           } else if (state === 'FOCUS') {
             // Two-step inflate matching the two focus rings
             const mp = mpByIdx.get(activeIdx);
             if (mp) {
               if (!mp.dataset.baseR) mp.dataset.baseR = mp.getAttribute('r') || '3.875';
               const baseR = parseFloat(mp.dataset.baseR);
-              const ringGap = (FOCUS_DUR - FOCUS_RING_DUR) / Math.max(1, FOCUS_RINGS - 1);
+              const ringGap = (focusDur - FOCUS_RING_DUR) / Math.max(1, FOCUS_RINGS - 1);
 
               // Two-step inflate: each ring triggers a pump
               // Step 1: 0 → ringGap  (inflate 1× → inflate1×, random)
@@ -2447,20 +2487,21 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
               }
               mp.setAttribute('r', targetR.toFixed(2));
 
-              // Transition dot color: party → blended over FOCUS_DUR
-              const cf = Math.min(1, dt / FOCUS_DUR);
+              // Transition dot color: party → blended over the focus
+              const cf = Math.min(1, dt / focusDur);
               mp.setAttribute('fill', blendColors(activeParty, blendedColor, cf));
-              // Spawn concentric rings staggered + emoji burst on 2nd ring
+              // Spawn concentric rings staggered; the emoji burst comes with
+              // the first, as the wave sets off
               while (focusRingsSpawned < FOCUS_RINGS && dt >= focusRingsSpawned * ringGap) {
                 spawnFocusRing(activeColor);
                 focusRingsSpawned++;
-                if (focusRingsSpawned === FOCUS_RINGS && !emojiBurstSpawned) {
+                if (!emojiBurstSpawned) {
                   emojiBurstSpawned = true;
                   spawnEmojiBurst(emojiCount, activeColor);
                 }
               }
             }
-            if (dt >= FOCUS_DUR) {
+            if (dt >= focusDur) {
               const mp2 = mpByIdx.get(activeIdx);
               if (mp2) {
                 mp2.setAttribute('fill', blendedColor);
@@ -2471,26 +2512,25 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
             const mp = mpByIdx.get(activeIdx);
             if (mp) {
               const baseR = parseFloat(mp.dataset.baseR || '3.875');
-              const t = ease(dt / WALK_OUT_DUR);
+              const t = ease(dt / walkOutDur);
               mp.setAttribute('cx', lerp(seatX, deskCenterX, t).toFixed(1));
               mp.setAttribute('cy', lerp(seatY, deskBehindY, t).toFixed(1));
               // Shrink from inflated size down to desk size 1.6×
               mp.setAttribute('r', lerp(baseR * inflateMax, baseR * 1.6, t).toFixed(2));
               mp.setAttribute('fill', blendedColor);
             }
-            if (dt >= WALK_OUT_DUR) {
+            if (dt >= walkOutDur) {
               // Desk takes the speaker's blended color while present
-              if (deskEl) deskEl.setAttribute('fill', blendedColor);
+              if (deskEl) deskEl.style.fill = blendedColor;
               state = 'SPEAKING'; stateT0 = now;
             }
           } else if (state === 'SPEAKING') {
-            // Pulsing deflate: inflate→deflate→inflate→deflate over SPEAK_DUR
+            // Pulsing deflate, one pulse per ~2.6 s of speech
             const spMp = mpByIdx.get(activeIdx);
             if (spMp) {
               const baseR = parseFloat(spMp.dataset.baseR || '3.875');
-              // Two full pulses across SPEAK_DUR
-              const pulseCycles = 2;
-              const f = Math.min(1, dt / SPEAK_DUR);
+              const pulseCycles = Math.max(1, Math.round(speakDur / WAVE_REPEAT));
+              const f = Math.min(1, dt / speakDur);
               // Each cycle: inflate then deflate (sine wave, amplitude decaying)
               const decay = 1 - f;  // amplitude shrinks toward end
               const phase = f * pulseCycles * Math.PI * 2;
@@ -2501,53 +2541,39 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
               spMp.setAttribute('r', r.toFixed(2));
             }
 
-            // Spawn CSS soundwaves in the blended color (once per offset, count/reach scaled to dot size)
-            waveOffsets.forEach((off, wi) => {
-              if (dt >= off && !spawnedWaves[wi]) {
-                spawnedWaves[wi] = true;
-                spawnCssWave(blendedColor, 0, waveReachScale);
+            // Spawn CSS soundwaves in the blended color (count/reach scaled to dot size)
+            waveSchedule.forEach(w => {
+              if (dt >= w.off && !w.spawned) {
+                w.spawned = true;
+                spawnCssWave(blendedColor, 0, waveReachScale, w.dur);
               }
             });
 
             // Seat colour shift — probability scaled to dot size
-            if (!shifted && dt >= COLOR_SHIFT_T) {
+            if (!shifted && dt >= shiftT) {
               shifted = true;
               seatEls.forEach(el => {
                 const si = parseInt(el.dataset.idx || '-1', 10);
                 if (si >= 0 && rcRand(si, speakerRound) < colorShiftProb) {
                   const seatGray = el.getAttribute('fill') || '#8c8984';
-                  el.setAttribute('fill', blendColors(seatGray, activeColor, 0.6));
+                  el.style.fill = blendColors(seatGray, activeHex, 0.6);
+                  tintedSeats.push(el);
                 }
               });
             }
 
-            if (dt >= SPEAK_DUR) {
-              // Remove any lingering SVG wave arcs
-              activeWaveEls.forEach(el => el.remove());
-              activeWaveEls.length = 0;
-              state = 'WALK_BACK'; stateT0 = now;
-            }
+            if (dt >= speakDur) { state = 'WALK_BACK'; stateT0 = now; }
           } else if (state === 'WALK_BACK') {
             const mp = mpByIdx.get(activeIdx);
             if (mp) {
               const baseR = parseFloat(mp.dataset.baseR || '3.875');
-              const t = ease(dt / WALK_BACK_DUR);
+              const t = ease(dt / walkBackDur);
               mp.setAttribute('cx', lerp(deskCenterX, seatX, t).toFixed(1));
               mp.setAttribute('cy', lerp(deskBehindY, seatY, t).toFixed(1));
               mp.setAttribute('r', baseR.toFixed(2));
               mp.setAttribute('fill', blendedColor);
             }
-            if (dt >= WALK_BACK_DUR) {
-              const mp2 = mpByIdx.get(activeIdx);
-              if (mp2) {
-                mp2.setAttribute('cx', seatX.toFixed(1));
-                mp2.setAttribute('cy', seatY.toFixed(1));
-                mp2.setAttribute('fill', blendedColor);
-                mp2.setAttribute('r', mp2.dataset.baseR || '3.875');
-              }
-              if (deskEl) deskEl.setAttribute('fill', deskNeutral);
-              state = 'IDLE';
-            }
+            if (dt >= walkBackDur) seatSpeaker();
           }
 
           requestAnimationFrame(tick);
