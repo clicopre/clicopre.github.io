@@ -500,12 +500,11 @@ const netGlyphDataJSON = JSON.stringify(netGlyphs.map(g => ({
 })));
 
 // ── Rollcall (elongated plenary chamber + 1-at-a-time speakers) ───
-// 228 static seats over 4 elongated arcs. A cycle of 8 speakers walk
-// to the desk one at a time. At the desk, the MP stays for ~5.6 seconds
-// while hemicyclic "soundwaves" of its party colour expand outward into
-// the chamber. After each wave reaches the rows, every other seat has a
-// 0.8 probability of shifting to the speaker's party colour, and 0.2 of
-// shifting against it. The whole sequence loops indefinitely.
+// 228 seats over 4 elongated arcs, shaded by political group. With each
+// newsfeed event one of 8 speakers is highlighted in the news colour,
+// walks to the desk and speaks: hemicyclic soundwaves spread into the
+// chamber and some seats take on the news colour. Speaker and seats fade
+// back to their group shade before the next event.
 const rcW = 1200;
 const rcH = 60;
 const rcCx = rcW / 2;
@@ -518,14 +517,10 @@ const rcRows = [
   { rx: 590, ry: 53, count: 55 },
 ];
 
-const rcParties = [
-  '#c2bfba',   // lightest warm gray
-  '#b0ada8',
-  '#9e9b96',   // mid-light
-  '#8c8984',
-  '#7a7772',   // mid-dark
-  '#696660',   // darkest (still reads color)
-];
+// Six political groups, left to right. Their shades are theme-aware CSS
+// (.sd-rollcall__g1–g6: the ink colour mixed into the panel, 42 → 82 %),
+// so the chamber reads faint-to-strong the same way in light and dark.
+const rcGroupCount = 6;
 
 // Seats are sampled by *arc length* (rather than uniform angle) over a
 // reduced angular sweep, so they don't pile up at the edges and look
@@ -560,7 +555,7 @@ function evenArcAngles(rx: number, ry: number, count: number): number[] {
   return out;
 }
 
-type RcSeat = { x: number; y: number; r: number; party: string };
+type RcSeat = { x: number; y: number; r: number; group: number };
 const rcSeats: RcSeat[] = [];
 for (const row of rcRows) {
   const angles = evenArcAngles(row.rx, row.ry, row.count);
@@ -569,8 +564,8 @@ for (const row of rcRows) {
     const angle = angles[i];
     const x = rcCx + row.rx * Math.cos(angle);
     const y = rcCy - row.ry * Math.sin(angle);
-    const partyIdx = Math.min(rcParties.length - 1, Math.floor(t * rcParties.length));
-    rcSeats.push({ x, y, r: 3.1, party: rcParties[partyIdx] });
+    const group = 1 + Math.min(rcGroupCount - 1, Math.floor(t * rcGroupCount));
+    rcSeats.push({ x, y, r: 3.1, group });
   }
 }
 
@@ -1249,7 +1244,7 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
         >
           <div class="sd-rollcall__wave-overlay" aria-hidden="true"></div>
           <svg viewBox={`0 0 ${rcW} ${rcH}`} preserveAspectRatio="none">
-            {/* Static seats (non-speakers) — fill animated by JS */}
+            {/* Static seats (non-speakers) — group shade from CSS, tint by JS */}
             {rcSeats.map((seat, i) => {
               if (rcSpeakerSet.has(i)) return null;
               return (
@@ -1257,8 +1252,7 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
                   cx={seat.x}
                   cy={seat.y}
                   r={seat.r}
-                  fill={seat.party}
-                  class="sd-rollcall__seat"
+                  class={`sd-rollcall__seat sd-rollcall__g${seat.group}`}
                   data-idx={i}
                 />
               );
@@ -1281,8 +1275,7 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
                   cx={seat.x}
                   cy={seat.y}
                   r={seat.r}
-                  fill={seat.party}
-                  class="sd-rollcall__mp"
+                  class={`sd-rollcall__mp sd-rollcall__g${seat.group}`}
                   data-idx={idx}
                 />
               );
@@ -2255,61 +2248,53 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
         return s - Math.floor(s);
       }
 
-      // ──── Color blending ────
-      function parseHex(hex: string): [number, number, number] {
-        hex = hex.replace('#', '');
-        if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
-        return [
-          parseInt(hex.substring(0, 2), 16),
-          parseInt(hex.substring(2, 4), 16),
-          parseInt(hex.substring(4, 6), 16),
-        ];
+      // ──── Color mixing ────
+      // Seat shades come from CSS (color-mix), so they are read back as
+      // computed values: "rgb(r, g, b)", "color(srgb r g b)" or hex.
+      type Rgb = [number, number, number];
+      function toRgb(c: string): Rgb {
+        c = c.trim();
+        if (c[0] === '#') {
+          let h = c.slice(1);
+          if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+          return [0, 2, 4].map(i => parseInt(h.substring(i, i + 2), 16)) as Rgb;
+        }
+        const srgb = /^color\(srgb ([\d.e-]+) ([\d.e-]+) ([\d.e-]+)/.exec(c);
+        if (srgb) return [1, 2, 3].map(i => Math.round(parseFloat(srgb[i]) * 255)) as Rgb;
+        const n = c.match(/[\d.]+/g);
+        return n && n.length >= 3 ? [+n[0], +n[1], +n[2]] : [107, 121, 133];
       }
-      // Convert RGB [0-255] to HSL [h:0-360, s:0-1, l:0-1]
-      function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
-        r /= 255; g /= 255; b /= 255;
-        const max = Math.max(r, g, b), min = Math.min(r, g, b);
-        const l = (max + min) / 2;
-        if (max === min) return [0, 0, l];
-        const d = max - min;
-        const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-        let h = 0;
-        if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
-        else if (max === g) h = ((b - r) / d + 2) / 6;
-        else h = ((r - g) / d + 4) / 6;
-        return [h * 360, s, l];
+      function toHex([r, g, b]: Rgb): string {
+        return `#${((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1)}`;
       }
-      function hslToRgb(h: number, s: number, l: number): [number, number, number] {
-        h /= 360;
-        if (s === 0) { const v = Math.round(l * 255); return [v, v, v]; }
-        const hue2rgb = (p: number, q: number, t: number) => {
-          if (t < 0) t += 1; if (t > 1) t -= 1;
-          if (t < 1/6) return p + (q - p) * 6 * t;
-          if (t < 1/2) return q;
-          if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-          return p;
-        };
-        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-        const p = 2 * l - q;
-        return [
-          Math.round(hue2rgb(p, q, h + 1/3) * 255),
-          Math.round(hue2rgb(p, q, h) * 255),
-          Math.round(hue2rgb(p, q, h - 1/3) * 255),
-        ];
+      // Straight sRGB mix: t = 0 gives a, t = 1 gives b
+      function mixColors(a: string, b: string, t: number): string {
+        const ca = toRgb(a), cb = toRgb(b);
+        return toHex(ca.map((v, i) => Math.round(v + (cb[i] - v) * t)) as Rgb);
       }
-
-      function blendColors(a: string, b: string, t: number): string {
-        // Tint-blend: adopt hue+saturation from b, but keep luminance of a.
-        const [ar, ag, ab] = parseHex(a);
-        const [br, bg, bb] = parseHex(b);
-        const [, , lA] = rgbToHsl(ar, ag, ab);
-        const [hB, sB, ] = rgbToHsl(br, bg, bb);
-        // Interpolate toward b's hue/sat, preserve a's lightness
-        const [hA, sA, ] = rgbToHsl(ar, ag, ab);
-        const h = t > 0.01 ? hB : hA; // snap to target hue
-        const s = sA + (sB - sA) * t;  // blend saturation
-        const [r, g, bl] = hslToRgb(h, s, lA);
-        return `#${((1 << 24) | (r << 16) | (g << 8) | bl).toString(16).slice(1)}`;
+      function luminance(c: Rgb): number {
+        const [r, g, b] = c.map(v => {
+          v /= 255;
+          return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+        });
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      }
+      function contrast(a: Rgb, b: Rgb): number {
+        const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+        return (hi + 0.05) / (lo + 0.05);
+      }
+      // A news colour as shown in the chamber. A colourless one (the ink of
+      // the "news" topic) would vanish among the grey seats, so it shows in
+      // the accent teal; any colour is then nudged toward the theme's ink
+      // until it stands out from the panel at 3:1 (dark hues in dark mode).
+      function legible(c: string): string {
+        const panel = toRgb(getComputedStyle(rcPlot!).backgroundColor);
+        const ink = resolveColor('var(--c-ink)');
+        const [r, g, b] = toRgb(c);
+        if (Math.max(r, g, b) - Math.min(r, g, b) < 40) c = resolveColor('var(--c-teal-deep)');
+        let out = toHex(toRgb(c));
+        for (let i = 0; i < 6 && contrast(toRgb(out), panel) < 3; i++) out = mixColors(out, ink, 0.2);
+        return out;
       }
 
       // ──────── State machine ────────
@@ -2323,9 +2308,9 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
       let cycleT0 = -Infinity;  // when the current event's ring set off
       let activeIdx = -1;
       let activeColor = '';  // raw news color (may be a theme token)
-      let activeHex = '';    // activeColor resolved to hex, for blending
-      let blendedColor = ''; // party + news blend
-      let activeParty = '';
+      let activeHex = '';    // activeColor as shown in the chamber (legible hex)
+      let blendedColor = ''; // speaker's colour: mostly news, a little group
+      let activeParty = '';  // speaker's group shade in the current theme
       let seatX = 0, seatY = 0;
       let focusDur = FOCUS_DUR, walkOutDur = WALK_OUT_DUR, speakDur = SPEAK_MIN, walkBackDur = WALK_BACK_DUR;
       let shiftT = 2.0;      // seconds into the speech when the audience tints
@@ -2364,8 +2349,9 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
           if (mp) {
             mp.setAttribute('cx', seatX.toFixed(1));
             mp.setAttribute('cy', seatY.toFixed(1));
-            mp.setAttribute('fill', blendedColor);
             mp.setAttribute('r', mp.dataset.baseR || '3.875');
+            mp.style.fill = '';
+            mp.style.stroke = '';
           }
           activeWaveEls.forEach(el => el.remove());
           activeWaveEls.length = 0;
@@ -2389,11 +2375,15 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
 
           activeIdx   = idx;
           activeColor = color;
-          activeHex   = resolveColor(color);
-          // Speakers keep their blended colour after speaking; blend from the
-          // original party colour so it does not drift over repeated turns.
-          if (mp && !mp.dataset.party) mp.dataset.party = mp.getAttribute('fill') || '#6b7985';
-          activeParty = mp?.dataset.party || '#6b7985';
+          activeHex   = legible(resolveColor(color));
+          // Read the speaker's group shade with no inline colour or fade left
+          if (mp) {
+            mp.style.transition = 'none';
+            mp.style.fill = '';
+            activeParty = toHex(toRgb(getComputedStyle(mp).fill));
+            // Outline: the highlighted speaker stands out from any group shade
+            mp.style.stroke = 'var(--c-ink)';
+          }
           seatX = parseFloat(mp?.getAttribute('cx') || '600');
           seatY = parseFloat(mp?.getAttribute('cy') || '30');
           shifted = false;
@@ -2419,8 +2409,8 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
           waveReachScale = 0.60 + sizeNorm * 0.44;
           // Color shift probability: 15% (small) to 70% (big)
           colorShiftProb = 0.15 + sizeNorm * 0.55;
-          // Blend: 55% party + 45% news
-          blendedColor = blendColors(activeParty, activeHex, 0.45);
+          // Speaker: 75 % news colour, 25 % group shade
+          blendedColor = mixColors(activeParty, activeHex, 0.75);
           state   = 'FOCUS';
           stateT0 = t0;
           cycleT0 = t0;
@@ -2487,9 +2477,9 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
               }
               mp.setAttribute('r', targetR.toFixed(2));
 
-              // Transition dot color: party → blended over the focus
+              // Transition dot color: group shade → blended over the focus
               const cf = Math.min(1, dt / focusDur);
-              mp.setAttribute('fill', blendColors(activeParty, blendedColor, cf));
+              mp.style.fill = mixColors(activeParty, blendedColor, cf);
               // Spawn concentric rings staggered; the emoji burst comes with
               // the first, as the wave sets off
               while (focusRingsSpawned < FOCUS_RINGS && dt >= focusRingsSpawned * ringGap) {
@@ -2503,9 +2493,7 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
             }
             if (dt >= focusDur) {
               const mp2 = mpByIdx.get(activeIdx);
-              if (mp2) {
-                mp2.setAttribute('fill', blendedColor);
-              }
+              if (mp2) mp2.style.fill = blendedColor;
               state = 'WALK_OUT'; stateT0 = now;
             }
           } else if (state === 'WALK_OUT') {
@@ -2517,7 +2505,6 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
               mp.setAttribute('cy', lerp(seatY, deskBehindY, t).toFixed(1));
               // Shrink from inflated size down to desk size 1.6×
               mp.setAttribute('r', lerp(baseR * inflateMax, baseR * 1.6, t).toFixed(2));
-              mp.setAttribute('fill', blendedColor);
             }
             if (dt >= walkOutDur) {
               // Desk takes the speaker's blended color while present
@@ -2555,14 +2542,23 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
               seatEls.forEach(el => {
                 const si = parseInt(el.dataset.idx || '-1', 10);
                 if (si >= 0 && rcRand(si, speakerRound) < colorShiftProb) {
-                  const seatGray = el.getAttribute('fill') || '#8c8984';
-                  el.style.fill = blendColors(seatGray, activeHex, 0.6);
+                  el.style.fill = mixColors(getComputedStyle(el).fill, activeHex, 0.75);
                   tintedSeats.push(el);
                 }
               });
             }
 
-            if (dt >= speakDur) { state = 'WALK_BACK'; stateT0 = now; }
+            if (dt >= speakDur) {
+              // The speaker fades back to their group shade on the way back,
+              // and the desk clears, so the chamber ends each cycle neutral
+              const mp = mpByIdx.get(activeIdx);
+              if (mp) {
+                mp.style.transition = `fill ${walkBackDur.toFixed(2)}s ease`;
+                mp.style.fill = '';
+              }
+              if (deskEl) deskEl.style.fill = '';
+              state = 'WALK_BACK'; stateT0 = now;
+            }
           } else if (state === 'WALK_BACK') {
             const mp = mpByIdx.get(activeIdx);
             if (mp) {
@@ -2571,7 +2567,6 @@ const nfParallels = [-28, -16, -6, 6, 16, 28].map((off) => {
               mp.setAttribute('cx', lerp(deskCenterX, seatX, t).toFixed(1));
               mp.setAttribute('cy', lerp(deskBehindY, seatY, t).toFixed(1));
               mp.setAttribute('r', baseR.toFixed(2));
-              mp.setAttribute('fill', blendedColor);
             }
             if (dt >= walkBackDur) seatSpeaker();
           }

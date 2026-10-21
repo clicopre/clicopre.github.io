@@ -1309,6 +1309,21 @@ section.deep { background: var(--c-bg-deep); }
   width: 100%;
   height: 100%;
 }
+/* Seat shades by political group: the ink colour mixed into the panel,
+   faint (g1) to strong (g6) in either theme. 2.6–8.5:1 against the panel
+   in light mode, 3.5–9.5:1 in dark. */
+.sd-rollcall__g1 { fill: color-mix(in srgb, var(--c-ink) 42%, var(--c-bg-alt)); }
+.sd-rollcall__g2 { fill: color-mix(in srgb, var(--c-ink) 50%, var(--c-bg-alt)); }
+.sd-rollcall__g3 { fill: color-mix(in srgb, var(--c-ink) 58%, var(--c-bg-alt)); }
+.sd-rollcall__g4 { fill: color-mix(in srgb, var(--c-ink) 66%, var(--c-bg-alt)); }
+.sd-rollcall__g5 { fill: color-mix(in srgb, var(--c-ink) 74%, var(--c-bg-alt)); }
+.sd-rollcall__g6 { fill: color-mix(in srgb, var(--c-ink) 82%, var(--c-bg-alt)); }
+/* The highlighted speaker's outline (stroke set by JS) */
+.sd-rollcall__mp {
+  stroke-width: 1px;
+  stroke-opacity: 0.75;
+  vector-effect: non-scaling-stroke;
+}
 /* Neutral desk, a step darker than the panel in light mode and lighter in
    dark; JS sets an inline fill while a speaker is at it. */
 .sd-rollcall__desk {
